@@ -1,12 +1,8 @@
 # Aplikasi Analisis Data Interaktif 📊
 
-[![Lisensi: MIT](https://img.shields.io/badge/Lisensi-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shiny](https://img.shields.io/badge/Made%20with-Shiny-blue.svg)](https://shiny.posit.co/)
 
 Aplikasi web berbasis R Shiny yang dirancang untuk melakukan analisis data secara interaktif. Pengguna dapat mengunggah dataset mereka sendiri dalam format CSV, melakukan pembersihan data, menjalankan analisis statistik seperti ANOVA, serta menguji asumsi statistik dasar.
-
-![Tangkapan Layar Aplikasi](https://i.imgur.com/gKkQZpT.png) 
-*(Anda bisa mengganti link di atas dengan tangkapan layar aplikasi Anda sendiri)*
 
 ---
 
@@ -28,14 +24,11 @@ Aplikasi web berbasis R Shiny yang dirancang untuk melakukan analisis data secar
 
 ```
 /proyek-analisis-data/
-├── .gitignore          # File yang diabaikan oleh Git
-├── app.R               # Kode utama aplikasi Shiny (UI & Server)
+├── rshiny-analisis-regresi.R               # Kode utama aplikasi Shiny (UI, Server, & CSS)
 ├── data/
-│   └── contoh_data.csv # Contoh dataset untuk demo
-├── LICENSE             # Lisensi proyek (MIT)
+│   └── epl_results_2022-23_missing.csv # Contoh dataset dengan missing value untuk demo
+│   └── epl_results_2022-23.csv # Contoh dataset tanpa missing value untuk demo
 ├── README.md           # File dokumentasi ini
-└── www/
-    └── styles.css      # File CSS untuk kustomisasi tampilan
 ```
 
 ---
@@ -49,8 +42,8 @@ Untuk menjalankan aplikasi ini di komputer lokal Anda, ikuti langkah-langkah ber
 
 **2. Clone Repositori:**
 ```bash
-git clone [https://github.com/nama-anda/proyek-analisis-data.git](https://github.com/nama-anda/proyek-analisis-data.git)
-cd proyek-analisis-data
+git clone [https://github.com/rafifernanda/analisis-regresi.git](https://github.com/rafifernandaa/analisis-regresi.git)
+cd analisis-regresi
 ```
 
 **3. Instal Paket yang Dibutuhkan:**
@@ -72,14 +65,10 @@ install.packages(c(
 
 ### 📝 Cara Menggunakan Aplikasi
 
-1.  **Unggah File**: Klik tombol "Browse" atau "Upload CSV File" dan pilih file `.csv` Anda. Anda juga bisa menggunakan file `data/contoh_data.csv` yang sudah disediakan.
+1.  **Unggah File**: Klik tombol "Browse" atau "Upload CSV File" dan pilih file `.csv` Anda. Anda juga bisa menggunakan file `data/epl_results_2022-23_missing.csv.csv` atau `data/epl_results_2022-23.csv.csv`yang sudah disediakan.
 2.  **Pembersihan Data**: Jika data Anda memiliki nilai `NA`, klik tombol "Clean Data" untuk menghapusnya.
 3.  **Reset Data**: Jika Anda ingin kembali ke data asli, klik "Reset Data".
 4.  **Pilih Variabel**: Di sidebar, pilih variabel dependen (Y) dan independen (X) yang akan dianalisis.
 5.  **Hasilkan Analisis**: Klik tombol "Generate Analysis" untuk memperbarui hasil statistik dan visualisasi di semua tab.
 
 ---
-
-### 📜 Lisensi
-
-Proyek ini dilisensikan di bawah Lisensi MIT. Lihat file [LICENSE](LICENSE) untuk detail lebih lanjut.
