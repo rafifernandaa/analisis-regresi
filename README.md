@@ -1,4 +1,4 @@
-# Aplikasi Analisis Data Interaktif 📊
+# Aplikasi Analisis Regresi Interaktif 📊
 
 [![Shiny](https://img.shields.io/badge/Made%20with-Shiny-blue.svg)](https://shiny.posit.co/)
 
