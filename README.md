@@ -24,11 +24,11 @@ Aplikasi web berbasis R Shiny yang dirancang untuk melakukan analisis data secar
 
 ```
 /proyek-analisis-data/
-├── rshiny-analisis-regresi.R               # Kode utama aplikasi Shiny (UI, Server, & CSS)
 ├── data/
 │   └── epl_results_2022-23_missing.csv # Contoh dataset dengan missing value untuk demo
 │   └── epl_results_2022-23.csv # Contoh dataset tanpa missing value untuk demo
 ├── README.md           # File dokumentasi ini
+├── rshiny-analisis-regresi.R               # Kode utama aplikasi Shiny (UI, Server, & CSS)
 ```
 
 ---
