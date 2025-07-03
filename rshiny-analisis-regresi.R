@@ -302,7 +302,49 @@ ui <- page_navbar(
       tabPanel("Uji Normalitas", card(full_screen = TRUE, card_header("Uji Shapiro-Wilk & Anderson-Darling"), verbatimTextOutput("normality"))),
       tabPanel("Uji Homoskedastisitas", card(full_screen = TRUE, card_header("Uji Levene"), verbatimTextOutput("levene"))),
       tabPanel("Uji Normalitas Residual", card(full_screen = TRUE, card_header("Histogram & Uji Normalitas Residual"), plotOutput("residual_plot"), verbatimTextOutput("residual_test"))),
-      tabPanel("Uji Multikolinearitas", card(full_screen = TRUE, card_header("Uji Multikolinearitas dengan VIF"), verbatimTextOutput("vif_output")))
+      tabPanel("Uji Multikolinearitas", card(full_screen = TRUE, card_header("Uji Multikolinearitas dengan VIF"), verbatimTextOutput("vif_output"))),
+      tabPanel("4-Plot Diagnostic",
+               card(full_screen = TRUE,
+                    card_header("EDA Residual Diagnostics (4-Plot)"),
+                    # Baris pertama untuk plot
+                    fluidRow(
+                      column(6, plotOutput("resid_runseq")),
+                      column(6, plotOutput("resid_lag"))
+                    ),
+                    # Baris kedua untuk plot
+                    fluidRow(
+                      column(6, plotOutput("resid_hist")),
+                      column(6, plotOutput("resid_qq"))
+                    ),
+                    # Baris baru untuk interpretasi
+                    fluidRow(
+                      column(12,
+                             hr(), # Garis pemisah
+                             h4("Interpretasi 4-Plot Diagnostik"),
+                             p("Gunakan keempat plot di atas untuk menguji asumsi-asumsi penting pada residual model Anda. Residual adalah selisih antara nilai aktual dan nilai prediksi model."),
+                             tags$ul(
+                               tags$li(
+                                 tags$strong("1. Run Sequence Plot:"), 
+                                 " Plot ini membantu memeriksa asumsi 'lokasi' dan 'variasi' yang tetap. Idealnya, plot akan menunjukkan titik-titik data yang tersebar secara acak di sekitar garis tengah (nol) tanpa ada tren naik atau turun (menandakan lokasi tetap), dan dengan sebaran vertikal yang konsisten di sepanjang plot (menandakan variasi tetap)."
+                               ),
+                               tags$li(
+                                 tags$strong("2. Lag Plot:"), 
+                                 " Plot ini digunakan untuk menguji keacakan (randomness) residual. Jika residual benar-benar acak, plot ini akan terlihat seperti sebaran titik tanpa pola atau struktur yang jelas (misalnya, tidak membentuk garis atau kurva)."
+                               ),
+                               tags$li(
+                                 tags$strong("3. Histogram:"), 
+                                 " Plot ini menunjukkan distribusi dari residual. Jika asumsi normalitas terpenuhi, histogram akan memiliki bentuk seperti lonceng (bell-shaped) yang simetris, yang mengindikasikan distribusi mendekati normal."
+                               ),
+                               tags$li(
+                                 tags$strong("4. Normal Probability Plot (Q-Q Plot):"), 
+                                 " Ini adalah tes visual yang paling umum untuk asumsi normalitas. Jika residual berdistribusi normal, titik-titik data akan mengikuti garis lurus diagonal berwarna merah."
+                               )
+                             ),
+                             p(tags$strong("Kesimpulan:"), " Jika keempat asumsi di atas terpenuhi, maka proses atau model yang dianalisis dapat dikatakan berada dalam 'kontrol statistik' (in statistical control), yang berarti model tersebut valid dan dapat diandalkan.")
+                      )
+                    )
+               )
+      )
   ))
 )
 
@@ -611,6 +653,48 @@ server <- function(input, output, session) {
     )
 
     print(output_df, row_names = FALSE)
+  })
+  # Run Sequence Plot
+  output$resid_runseq <- renderPlot({
+    req(analysis_data(), input$dep_var, input$ind_vars)
+    df <- analysis_data()
+    model <- lm(as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+"))), data = df)
+    resid <- resid(model)
+    
+    plot(resid, type = "o", col = "#007bff", main = "Run Sequence Plot", xlab = "Observation Index", ylab = "Residuals")
+    abline(h = 0, col = "red", lty = 2)
+  })
+  
+  # Lag Plot
+  output$resid_lag <- renderPlot({
+    req(analysis_data(), input$dep_var, input$ind_vars)
+    df <- analysis_data()
+    model <- lm(as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+"))), data = df)
+    resid <- resid(model)
+    
+    plot(head(resid, -1), tail(resid, -1), main = "Lag Plot", xlab = "Residual[t]", ylab = "Residual[t+1]", col = "#28a745")
+    abline(h = 0, v = 0, col = "gray", lty = 2)
+  })
+  
+  # Histogram
+  output$resid_hist <- renderPlot({
+    req(analysis_data(), input$dep_var, input$ind_vars)
+    df <- analysis_data()
+    model <- lm(as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+"))), data = df)
+    resid <- resid(model)
+    
+    hist(resid, main = "Histogram of Residuals", xlab = "Residuals", col = "darkgreen", border = "white", breaks = 20)
+  })
+  
+  # QQ Plot
+  output$resid_qq <- renderPlot({
+    req(analysis_data(), input$dep_var, input$ind_vars)
+    df <- analysis_data()
+    model <- lm(as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+"))), data = df)
+    resid <- resid(model)
+    
+    qqnorm(resid, main = "Normal Probability Plot")
+    qqline(resid, col = "red", lty = 2)
   })
 }
 
