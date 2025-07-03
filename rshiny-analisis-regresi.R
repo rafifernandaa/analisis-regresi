@@ -421,3 +421,150 @@ output$data_plot <- renderPlot({
       theme_minimal()
   }
 })
+
+# UI untuk pemilihan variabel
+output$var_select_ui <- renderUI({
+  df <- analysis_data()
+  req(df)
+  if (nrow(df) > 0) {
+    tagList(
+      hr(),
+      h5("4. Pemilihan Variabel"),
+      selectInput("dep_var", "Variabel Dependen (Y)", choices = names(df), selected = names(df)[1]),
+      selectInput("ind_vars", "Variabel Independen (X)", choices = names(df), multiple = TRUE, selected = names(df)[2])
+    )
+  }
+})
+
+# Value box jumlah data
+output$value1 <- renderValueBox({
+  df <- analysis_data()
+  req(df)
+  count <- nrow(df)
+  source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
+  valueBox(count, paste("Jumlah Baris di", source_text), icon = icon("list"))
+})
+
+# Ringkasan statistik
+output$summary <- renderPrint({
+  df <- analysis_data()
+  req(df, input$dep_var, input$ind_vars)
+  if (nrow(df) == 0) return("Data kosong.")
+  source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
+  cat(paste("### Ringkasan berdasarkan", source_text, "###\n\n"))
+  cat("Ringkasan untuk Variabel Dependen (Y):\n")
+  print(summary(df[[input$dep_var]]))
+  cat("\nRingkasan untuk Variabel Independen (X):\n")
+  print(summary(df[, input$ind_vars, drop = FALSE]))
+})
+
+# UI untuk variabel pada analisis ANOVA
+output$anova_var_ui <- renderUI({
+  df <- analysis_data()
+  req(df)
+  if(nrow(df) > 0){
+    tagList(
+      selectInput("dep_var_anova", "Variabel Dependen (Y)", choices=names(df), selected = isolate(input$dep_var)),
+      selectInput("ind_vars_anova", "Variabel Independen (X)", choices=names(df), multiple=TRUE, selected = isolate(input$ind_vars))
+    )
+  }
+})
+
+# Output hasil ANOVA
+output$anova <- renderPrint({
+  df <- analysis_data()
+  req(df, input$dep_var_anova, input$ind_vars_anova)
+  if(nrow(df) == 0) return("Tidak bisa melakukan ANOVA pada data kosong.")
+  for(var in input$ind_vars_anova){
+    df[[var]] <- as.factor(df[[var]])
+  }
+  formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse = "+")))
+  summary(aov(formula, data = df))
+})
+
+# Uji normalitas
+output$normality <- renderPrint({
+  df <- analysis_data()
+  req(df, input$dep_var)
+  if(nrow(df) == 0) return("Tidak bisa melakukan uji normalitas pada data kosong.")
+  y <- df[[input$dep_var]]
+  if(!is.numeric(y)){
+    cat("Uji normalitas memerlukan variabel dependen numerik.")
+  } else {
+    list(
+      "Uji Shapiro-Wilk" = shapiro.test(y),
+      "Uji Anderson-Darling" = ad.test(y)
+    )
+  }
+})
+
+# Uji homoskedastisitas (Levene)
+output$levene <- renderPrint({
+  df <- analysis_data()
+  req(df, input$dep_var, input$ind_vars)
+  if(nrow(df) == 0) return("Tidak bisa melakukan Uji Levene pada data kosong.")
+  y <- df[[input$dep_var]]
+  if(!is.numeric(y)){
+    cat("Uji Levene memerlukan variabel dependen numerik.")
+  } else {
+    for(var in input$ind_vars){
+      df[[var]] <- as.factor(df[[var]])
+    }
+    formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "*")))
+    print(leveneTest(formula, data = df))
+  }
+})
+
+# Modal konfirmasi pembersihan
+observeEvent(input$clean, {
+  req(rv$raw_data)
+  has_missing <- any(is.na(rv$raw_data))
+  showModal(modalDialog(
+    title = "Konfirmasi Pembersihan Data",
+    if (has_missing) "Lanjutkan dengan menghapus baris yang mengandung NA?" else "Tidak ada nilai NA yang ditemukan.",
+    footer = if (has_missing) tagList(
+      actionButton("confirm_clean", "Ya", class = "btn-primary"),
+      modalButton("Batal")
+    ) else modalButton("OK")
+  ))
+})
+
+# Modal konfirmasi analisis
+observeEvent(input$analyze, {
+  req(analysis_data())
+  showModal(modalDialog(
+    title = "Konfirmasi Analisis",
+    "Ini akan menjalankan semua analisis berdasarkan sumber data dan variabel yang Anda pilih. Lanjutkan?",
+    footer = tagList(
+      actionButton("confirm_analyze_run", "Ya", class = "btn-primary"),
+      modalButton("Tidak")
+    )
+  ))
+})
+
+# Notifikasi analisis berhasil dijalankan
+observeEvent(input$confirm_analyze_run, {
+  removeModal()
+  showNotification("Analisis berhasil dibuat!", type = "message")
+})
+
+# Modal bantuan
+observeEvent(input$help, {
+  showModal(modalDialog(
+    title = "Bantuan: Aplikasi Analisis Data", 
+    "Aplikasi ini memungkinkan Anda untuk:",
+    tags$ul(
+      tags$li("Mengunggah file CSV untuk dianalisis."),
+      tags$li("Membersihkan data dengan menghapus baris NA (opsional)."),
+      tags$li("Memilih antara data mentah atau data bersih untuk dianalisis."),
+      tags$li("Menghasilkan statistik ringkas dan hasil ANOVA."),
+      tags$li("Melakukan uji asumsi (Normalitas dan Homoskedastisitas)."),
+      tags$li("Memvisualisasikan data dengan plot.")
+    ),
+    easyClose = TRUE
+  ))
+})
+}
+
+# Jalankan aplikasi
+shinyApp(ui, server)
