@@ -1,3 +1,4 @@
+
 library(shiny)
 library(bslib)
 library(shinydashboard)
@@ -9,6 +10,8 @@ library(nortest)
 library(readr)
 library(stringr)
 library(shinyWidgets)
+library(rmarkdown)
+library(tinytex)
 
 custom_theme <- bs_theme(
   version = 5,
@@ -271,7 +274,38 @@ ui <- page_navbar(
     selectInput("plot_type", "Pilih Tipe Plot", choices = c("Garis" = "Line", "Batang" = "Bar")),
     hr(),
     actionButton("help", "Bantuan", icon = icon("question-circle"), class = "btn-block"),
-    uiOutput("var_select_ui")
+    uiOutput("var_select_ui"),
+    hr(),
+    downloadButton(
+      "export_pdf", 
+      "Ekspor Hasil ke PDF", 
+      icon = icon("file-pdf"),
+      class = "btn-primary btn-block"
+    )
+  ),
+  tabPanel(
+    title = "Home",
+    icon = icon("house"),
+    fluidPage(
+      div(
+        style = "padding: 50px 80px;",
+        h1("📊 Aplikasi Analisis Regresi", style = "text-align: center;"),
+        br(),
+        h4("Selamat datang!", style = "text-align: left;"),
+        p(
+          "Aplikasi ini dirancang untuk memudahkan pengguna khususnya pelajar, peneliti, maupun praktisi dalam melakukan analisis regresi secara cepat, interaktif, dan tetap dapat dipahami hasilnya secara mendalam.",
+          style = "text-align: justify;"
+        ),
+        p(
+          "Analisis regresi merupakan salah satu metode statistik yang digunakan untuk memahami dan memprediksi hubungan antara variabel dependen (target) dengan satu atau lebih variabel independen (prediktor). Model ini sangat berguna dalam berbagai bidang seperti ekonomi, teknik, kesehatan, dan ilmu sosial.",
+          style = "text-align: justify;"
+        ),
+        p(
+          "Dengan tampilan antarmuka yang ramah pengguna, Anda tidak perlu menulis kode untuk melakukan perhitungan, namun tetap dapat melihat hasil regresi dalam bentuk persamaan matematis, ringkasan statistik, serta pengujian asumsi-asumsi dasar regresi.",
+          style = "text-align: justify;"
+        )
+      )
+    )
   ),
   nav_panel(
     "Pengolahan Data",
@@ -286,29 +320,37 @@ ui <- page_navbar(
     tabsetPanel(
       type = "pills",
       tabPanel("Statistik Ringkas", card(full_screen = TRUE, card_header("Ringkasan Data"), valueBoxOutput("value1", width = 4), verbatimTextOutput("summary"))),
-      tabPanel(
-        "Hasil ANOVA",
-        card(
-          full_screen = TRUE,
-          card_header("ANOVA"),
-          uiOutput("anova_var_ui"),
-          verbatimTextOutput("anova_results"),
-          selectInput(
-            "anova_interpretation",
-            "Pilih Interpretasi ANOVA",
-            choices = c(
-              "F-Statistik" = "f_stat",
-              "R-Squared" = "r_squared",
-              "Adjusted R-Squared" = "adj_r_squared",
-              "Koefisien" = "coefficients"
-            ),
-            selected = "f_stat"
-          ),
-          htmlOutput("anova_interpretation_text")
-        )
+      tabPanel("Hasil ANOVA", 
+               card(
+                 full_screen = TRUE,
+                 card_header("ANOVA"),
+                 verbatimTextOutput("anova_results"),
+                 hr(),
+                 # Fitur interpretasi Anda dipertahankan
+                 selectInput(
+                   "anova_interpretation",
+                   "Pilih Interpretasi ANOVA",
+                   choices = c("F-Statistik" = "f_stat", "R-Squared" = "r_squared", "Koefisien" = "coefficients"),
+                   selected = "f_stat"
+                 ),
+                 htmlOutput("anova_interpretation_text")
+               )
       ),
       tabPanel("Visualisasi", card(full_screen = TRUE, card_header("Plot Data"), plotOutput("data_plot", height = "400px"))),
-      tabPanel("Model Akhir", card(full_screen = TRUE, card_header("Model Regresi Linear"), uiOutput("anova_var_ui"), verbatimTextOutput("model_equation_text"), radioButtons("model_component", "Tampilkan:", choices = c("Koefisien", "Intercept")), verbatimTextOutput("model_component_text")))
+      tabPanel("Model Akhir", 
+               card(
+                 full_screen = TRUE, 
+                 card_header("Model Regresi Linear"),
+                 h5("Ringkasan Model (Model Summary)"),
+                 verbatimTextOutput("model_summary"),
+                 hr(),
+                 h5("Persamaan Model Akhir"),
+                 uiOutput("model_equation"),
+                 hr(),
+                 h5("Interpretasi Koefisien"),
+                 verbatimTextOutput("model_interpretation")
+               )
+      )
     )
   ),
   nav_panel(
@@ -457,6 +499,58 @@ server <- function(input, output, session) {
     }
   })
   
+  # Model Reaktif untuk REGRESI LINEAR (memastikan variabel numerik)
+  model_fit <- reactive({
+    # Menggunakan pemilih variabel utama dari sidebar
+    req(analysis_data(), input$dep_var, input$ind_vars)
+    df <- analysis_data()
+    
+    df_for_lm <- df
+    # Paksa variabel menjadi numerik untuk regresi
+    tryCatch({
+      df_for_lm[[input$dep_var]] <- as.numeric(as.character(df_for_lm[[input$dep_var]]))
+      for(var in input$ind_vars) {
+        df_for_lm[[var]] <- as.numeric(as.character(df_for_lm[[var]]))
+      }
+    }, error = function(e) { return(NULL) })
+    
+    df_for_lm <- df_for_lm[complete.cases(df_for_lm[, c(input$dep_var, input$ind_vars)]),]
+    if(nrow(df_for_lm) < 2 || length(input$ind_vars) < 1) return(NULL)
+    
+    formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+")))
+    lm(formula, data = df_for_lm)
+  })
+  
+  # Model Reaktif untuk ANOVA (mengubah variabel independen menjadi faktor)
+  anova_model_summary <- reactive({
+    req(analysis_data(), input$dep_var, input$ind_vars)
+    df <- analysis_data()
+    
+    # --- VALIDASI PENTING DITAMBAHKAN ---
+    for(var in input$ind_vars) {
+      # Hitung jumlah level/grup unik
+      unique_levels <- length(unique(df[[var]]))
+      
+      # Beri peringatan jika variabel numerik dan punya terlalu banyak grup (>15)
+      # Angka 15 ini bisa Anda sesuaikan
+      if(is.numeric(df[[var]]) && unique_levels > 15) {
+        showNotification(
+          paste("Peringatan: Variabel '", var, "' memiliki", unique_levels, "nilai unik. ANOVA memperlakukannya sebagai grup terpisah. Analisis ini lebih cocok untuk variabel kategorikal dengan sedikit grup."),
+          type = "warning",
+          duration = 15 # Tampilkan notifikasi lebih lama
+        )
+      }
+    }
+    
+    # Sisa kode tetap sama
+    for(var in input$ind_vars) {
+      df[[var]] <- as.factor(df[[var]])
+    }
+    
+    formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+")))
+    model <- lm(formula, data = df)
+    summary(model)
+  })
   # --- Output dan Analisis menggunakan `analysis_data()` ---
   
   output$raw_table <- renderDT({
@@ -535,32 +629,22 @@ server <- function(input, output, session) {
   })
   
   output$anova_results <- renderPrint({
-    df <- analysis_data()
-    req(df, input$dep_var_anova, input$ind_vars_anova)
-    if(nrow(df) == 0) return("Tidak bisa melakukan ANOVA pada data kosong.")
+    req(anova_model_summary())
+    model_summary <- anova_model_summary()
     
-    for(var in input$ind_vars_anova){
-      df[[var]] <- as.factor(df[[var]])
-    }
+    # Hapus komponen 'call' dari objek summary
+    model_summary$call <- NULL
     
-    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse="+")))
-    model <- lm(formula, data=df)
-    summary(model)
+    # Cetak objek yang sudah dimodifikasi
+    print(model_summary)
   })
   
   output$anova_interpretation_text <- renderUI({
-    df <- analysis_data()
-    req(df, input$dep_var_anova, input$ind_vars_anova, input$anova_interpretation)
-    if(nrow(df) == 0) return(HTML("<p>Tidak ada data untuk diinterpretasikan.</p>"))
+    req(anova_model_summary(), input$anova_interpretation)
+    model_summary <- anova_model_summary() # Menggunakan model reaktif
     
-    for(var in input$ind_vars_anova){
-      df[[var]] <- as.factor(df[[var]])
-    }
-    
-    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse="+")))
-    model <- lm(formula, data=df)
-    model_summary <- summary(model)
-    
+    # Sisa kode Anda untuk interpretasi di sini sudah benar dan bisa dipertahankan
+    # Pastikan variabel inputnya sesuai dengan yang ada di UI, yaitu "anova_interpretation"
     f_stat <- model_summary$fstatistic
     f_value <- f_stat[["value"]]
     f_pvalue <- pf(f_stat[["value"]], f_stat[["numdf"]], f_stat[["dendf"]], lower.tail = FALSE)
@@ -604,52 +688,45 @@ server <- function(input, output, session) {
                                paste0(coef_text, "</ul>")
                              }
     )
-    
     HTML(interpretation)
   })
   
-  output$model_equation_text <- renderPrint({
-    df <- analysis_data()
-    req(df, input$dep_var_anova, input$ind_vars_anova)
-    for (var in input$ind_vars_anova) {
-      df[[var]] <- as.factor(df[[var]])
-    }
-    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse = "+")))
-    model <- lm(formula, data = df)
-    coefs <- round(coef(model), 3)
-    var_names <- names(coefs)
-    x_names <- var_names[var_names != "(Intercept)"]
-    x_mapping <- paste0("x", seq_along(x_names))
-    names(x_mapping) <- x_names
-    intercept <- round(coefs["(Intercept)"], 3)
-    terms <- c()
-    for (i in seq_along(x_names)) {
-      sign <- ifelse(coefs[x_names[i]] >= 0, "+", "-")
-      value <- abs(round(coefs[x_names[i]], 3))
-      terms <- c(terms, paste0(sign, " ", value, "*", names(x_mapping)[i]))
-    }
-    persamaan <- paste(input$dep_var_anova, "=", intercept, paste(terms, collapse = " "))
-    cat("Persamaan Model Akhir:\n")
-    cat(persamaan)
+  output$model_summary <- renderPrint({
+    req(model_fit())
+    summary(model_fit())
   })
   
-  output$model_component_text <- renderPrint({
-    df <- analysis_data()
-    req(df, input$dep_var_anova, input$ind_vars_anova, input$model_component)
-    for (var in input$ind_vars_anova) {
-      df[[var]] <- as.factor(df[[var]])
-    }
-    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse = "+")))
-    model <- lm(formula, data = df)
-    coefs <- round(coef(model), 3)
-    if (input$model_component == "Koefisien") {
-      x_names <- names(coefs)[names(coefs) != "(Intercept)"]
-      for (i in seq_along(x_names)) {
-        cat(paste0("x", i, ": ", x_names[i], "\n"))
+  output$model_equation <- renderUI({
+    model <- model_fit()
+    req(model)
+    coefs <- coef(model)
+    
+    # Membangun string persamaan
+    eq_str <- paste0(input$dep_var, " = ", round(coefs[1], 4))
+    if(length(coefs) > 1) {
+      for(i in 2:length(coefs)) {
+        sign <- ifelse(coefs[i] >= 0, " + ", " - ")
+        eq_str <- paste0(eq_str, sign, round(abs(coefs[i]), 4), " * ", names(coefs)[i])
       }
-    } else {
-      intercept <- coefs["(Intercept)"]
-      cat("Intercept:", round(intercept, 3))
+    }
+    tags$p(style="font-size:1.1em; background-color:#f5f5f5; border-radius:5px; padding:10px;", tags$code(eq_str))
+  })
+  
+  output$model_interpretation <- renderPrint({
+    model <- model_fit()
+    req(model)
+    coefs <- coef(model)
+    
+    cat(paste0("Intercept (", round(coefs[1], 4), "):\n"))
+    cat(paste0("  Nilai prediksi '", input$dep_var, "' ketika semua variabel independen bernilai nol.\n\n"))
+    
+    if(length(coefs) > 1) {
+      for(i in 2:length(coefs)) {
+        var_name <- names(coefs)[i]
+        value <- round(coefs[i], 4)
+        cat(paste0("Koefisien '", var_name, "' (", value, "):\n"))
+        cat(paste0("  Setiap kenaikan 1 unit pada '", var_name, "', akan merubah '", input$dep_var, "' sebesar ", value, " satuan, asumsi variabel lain konstan.\n\n"))
+      }
     }
   })
   
@@ -869,6 +946,136 @@ server <- function(input, output, session) {
       footer = if (has_missing) tagList(actionButton("confirm_clean", "Ya", class = "btn-primary"), modalButton("Batal")) else modalButton("OK")
     ))
   })
+  
+  output$export_pdf <- downloadHandler(
+    filename = function() {
+      paste("Laporan-Analisis-", Sys.Date(), ".pdf", sep = "")
+    },
+    
+    content = function(file) {
+      # Pengecekan awal
+      if (is.null(model_fit()) || is.null(anova_model_summary())) {
+        showNotification("Gagal: Model belum siap. Lakukan analisis terlebih dahulu.", type = "error", duration = 10)
+        return(NULL)
+      }
+      
+      # Notifikasi proses berjalan
+      id <- showNotification("Sedang mempersiapkan laporan PDF...", duration = NULL, type = "message")
+      on.exit(removeNotification(id))
+      
+      # --- Menyiapkan semua objek dan teks interpretasi ---
+      model_obj <- model_fit()
+      anova_summary_obj <- anova_model_summary()
+      summary_data_obj <- summary(analysis_data())
+      
+      model_equation_str <- {
+        coefs <- coef(model_obj)
+        eq <- paste0(input$dep_var, " = ", round(coefs[1], 4))
+        if(length(coefs) > 1) {
+          for(i in 2:length(coefs)) {
+            eq <- paste0(eq, ifelse(coefs[i] >= 0, " + ", " - "), round(abs(coefs[i]), 4), " * ", names(coefs)[i])
+          }
+        }
+        eq
+      }
+      
+      vif_results_obj <- {
+        if(length(input$ind_vars) > 1) as.data.frame(vif(model_obj)) else "VIF memerlukan >1 variabel independen."
+      }
+      
+      residual_normality_obj <- shapiro.test(residuals(model_obj))
+      
+      main_plot_obj <- {
+        df <- analysis_data()
+        p <- ggplot(df, aes(x = .data[[input$ind_vars[1]]], y = .data[[input$dep_var]]))
+        if (input$plot_type == "Line") p <- p + geom_line(aes(group=1), color="#007bff") + geom_point(color="#ff6200")
+        else p <- p + geom_bar(stat="summary", fun="mean", fill="#28a745")
+        p + labs(title = paste("Plot", input$dep_var, "vs", input$ind_vars[1])) + theme_minimal(base_size = 12)
+      }
+      
+      anova_interpretation_str <- {
+        # Logika ini untuk membuat rangkuman di PDF, tetap dipertahankan
+        f_stat <- anova_summary_obj$fstatistic
+        f_value <- f_stat[["value"]]; f_pvalue <- pf(f_stat[["value"]], f_stat[["numdf"]], f_stat[["dendf"]], lower.tail = FALSE)
+        r_squared <- anova_summary_obj$r.squared
+        coef_summary <- anova_summary_obj$coefficients
+        f_stat_text <- paste0("<h4>F-Statistik</h4><p>Nilai F = ", round(f_value, 3), ", p-value = ", format.pval(f_pvalue, digits=3), ".</p>", if(f_pvalue < 0.05) "<p>Model signifikan.</p>" else "<p>Model tidak signifikan.</p>")
+        r_squared_text <- paste0("<h4>R-Squared</h4><p>Nilai R-Squared = ", round(r_squared, 3), ".</p><p>", round(r_squared * 100, 1), "% variasi Y dapat dijelaskan.</p>")
+        coef_text <- "<h4>Koefisien Signifikan (p < 0.05)</h4>"
+        significant_coeffs_found <- FALSE
+        list_items <- ""
+        for(i in 1:nrow(coef_summary)) {
+          p_val <- coef_summary[i, "Pr(>|t|)"]
+          if (!is.na(p_val) && p_val < 0.05) {
+            var_name <- rownames(coef_summary)[i]
+            list_items <- paste0(list_items, "<li><b>", var_name, "</b>: Signifikan.</li>")
+            significant_coeffs_found <- TRUE
+          }
+        }
+        if (significant_coeffs_found) { coef_text <- paste0(coef_text, "<ul>", list_items, "</ul>")
+        } else { coef_text <- paste0(coef_text, "<p>Tidak ada koefisien signifikan.</p>") }
+        paste(f_stat_text, r_squared_text, coef_text, sep="<hr>")
+      }
+      
+      # === BLOK KODE YANG HILANG DAN SEKARANG DITAMBAHKAN KEMBALI ===
+      residual_normality_interpretation_str <- {
+        shapiro_res <- residual_normality_obj
+        p_val <- shapiro_res$p.value
+        paste0("<p>Uji Shapiro-Wilk pada residual: p-value = ", format.pval(p_val, digits=3), ". ",
+               if(p_val < 0.05) "Ini menunjukkan bahwa residual **tidak** berdistribusi normal (asumsi tidak terpenuhi)."
+               else "Tidak ada bukti bahwa residual tidak berdistribusi normal (asumsi terpenuhi)."
+        )
+      }
+      
+      vif_interpretation_str <- {
+        if(length(input$ind_vars) <= 1) {
+          "<p>Interpretasi VIF tidak tersedia.</p>"
+        } else {
+          vif_values <- vif(model_obj)
+          interp_text <- "<ul>"
+          for(i in 1:length(vif_values)) {
+            var_name <- names(vif_values)[i]
+            val <- vif_values[i]
+            ket <- if (val > 10) {"Multikolinearitas sangat tinggi."} else if (val > 5) {"Ada indikasi multikolinearitas."} else {"Tidak ada indikasi multikolinearitas."}
+            interp_text <- paste0(interp_text, "<li><b>", var_name, "</b>: VIF = ", round(val, 2), ". ", ket, "</li>")
+          }
+          paste0(interp_text, "</ul>")
+        }
+      }
+      
+      model_equation_interpretation_str <- {
+        coefs <- coef(model_obj)
+        interp_text <- "<ul>"
+        interp_text <- paste0(interp_text, "<li><b>(Intercept)</b>: Saat semua variabel independen nol, nilai prediksi '", input$dep_var, "' adalah ", round(coefs[1], 4), ".</li>")
+        if(length(coefs) > 1) {
+          for(i in 2:length(coefs)) {
+            var_name <- names(coefs)[i]
+            value <- round(coefs[i], 4)
+            arah <- ifelse(value >= 0, "menaikkan", "menurunkan")
+            interp_text <- paste0(interp_text, "<li><b>", var_name, "</b>: Kenaikan 1 satuan '", var_name, "' akan ", arah, " nilai prediksi '", input$dep_var, "' sebesar ", abs(value), ".</li>")
+          }
+        }
+        paste0(interp_text, "</ul>")
+      }
+      
+      # Menyiapkan file dan parameter list LENGKAP
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      params_list <- list(
+        summary_data = summary_data_obj, anova_summary = anova_summary_obj,
+        model_summary = summary(model_obj), reg_model = model_obj,
+        model_equation = model_equation_str, vif_results = vif_results_obj,
+        residual_normality = residual_normality_obj, main_plot = main_plot_obj,
+        anova_interpretation = anova_interpretation_str,
+        residual_normality_interpretation = residual_normality_interpretation_str, # Variabel ini sekarang sudah ada
+        vif_interpretation = vif_interpretation_str,
+        model_equation_interpretation = model_equation_interpretation_str
+      )
+      
+      rmarkdown::render(tempReport, output_file = file, params = params_list, envir = new.env(parent = globalenv()))
+    }
+  )
   
   observeEvent(input$help, {
     showModal(modalDialog(
