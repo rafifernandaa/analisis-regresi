@@ -219,3 +219,72 @@ custom_theme <- bs_theme(
       border: 1px solid #ff6200;
     }
   ')
+
+server <- function(input, output, session) {
+  rv <- reactiveValues(
+    raw_data = NULL,      # Untuk menyimpan data asli
+    cleaned_data = NULL,  # Untuk menyimpan data yang sudah dibersihkan
+    is_cleaned = FALSE    # Flag untuk menandai apakah pembersihan sudah dilakukan
+  )
+
+  observeEvent(input$file, {
+    req(input$file)
+    df <- tryCatch({
+      read_csv(input$file$datapath, locale = locale(encoding = input$encoding))
+    }, error = function(e) {
+      showNotification(paste("Gagal membaca file:", e$message), type = "error", duration = 10)
+      return(NULL)
+    })
+    
+    if (!is.null(df)) {
+      rv$raw_data <- df
+      rv$cleaned_data <- NULL
+      rv$is_cleaned <- FALSE
+      showNotification("File berhasil diunggah.", type = "message")
+    }
+  })
+
+  observeEvent(input$confirm_clean, {
+    removeModal()
+    df_cleaned <- rv$raw_data[complete.cases(rv$raw_data), ]
+    if (nrow(df_cleaned) == 0) {
+      showNotification("Peringatan: Semua baris mengandung NA dan telah dihapus.", type = "warning", duration = 10)
+    } else {
+      rows_removed <- nrow(rv$raw_data) - nrow(df_cleaned)
+      showNotification(paste(rows_removed, "baris dengan NA berhasil dihapus."), type = "message")
+    }
+    rv$cleaned_data <- df_cleaned
+    rv$is_cleaned <- TRUE
+  })
+
+  observeEvent(input$reset, {
+    req(rv$raw_data)
+    rv$cleaned_data <- NULL
+    rv$is_cleaned <- FALSE
+    updateRadioButtons(session, "data_source_selector", selected = "raw")
+    showNotification("Data telah dikembalikan ke kondisi mentah.", type = "default")
+  })
+
+  output$data_source_ui <- renderUI({
+    req(rv$raw_data)
+    choices <- c("Data Mentah" = "raw")
+    if (rv$is_cleaned) {
+      choices <- c(choices, "Data Bersih" = "clean")
+    }
+    radioButtons(
+      "data_source_selector",
+      label = "Pilih Sumber Data untuk Analisis:",
+      choices = choices,
+      selected = "raw"
+    )
+  })
+
+  analysis_data <- reactive({
+    req(rv$raw_data, input$data_source_selector)
+    if (input$data_source_selector == "clean" && rv$is_cleaned) {
+      return(rv$cleaned_data)
+    } else {
+      return(rv$raw_data)
+    }
+  })
+}
