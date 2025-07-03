@@ -351,3 +351,73 @@ server <- function(input, output, session) {
       return(rv$raw_data)
     }
   })
+  
+# Data Visualization and Tables
+# Tabel: Menampilkan data mentah
+output$raw_table <- renderDT({
+  req(rv$raw_data)
+  datatable(
+    rv$raw_data,
+    options = list(
+      scrollX = TRUE,
+      scrollY = "300px",
+      pageLength = 10
+    ),
+    caption = "Data asli yang diunggah."
+  )
+})
+
+# Tabel: Menampilkan data yang telah dibersihkan
+output$cleaned_table_preview <- renderDT({
+  if (!rv$is_cleaned || is.null(rv$cleaned_data)) {
+    return(datatable(
+      data.frame(Status = "Data belum dibersihkan atau tidak ada data bersih."),
+      options = list(dom = 't')
+    ))
+  }
+  datatable(
+    rv$cleaned_data,
+    options = list(
+      scrollX = TRUE,
+      scrollY = "300px",
+      pageLength = 10
+    ),
+    caption = "Hasil setelah penghapusan baris dengan nilai NA."
+  )
+})
+
+# Visualisasi: Line atau Bar plot berdasarkan variabel dependen yang dipilih
+output$data_plot <- renderPlot({
+  df <- analysis_data()
+  req(df, input$plot_type, input$dep_var)
+  if (nrow(df) == 0) return(NULL)
+  
+  x_var <- seq_len(nrow(df))
+  y_val <- df[[input$dep_var]]
+  
+  p <- ggplot(
+    data.frame(Index = x_var, Y = y_val),
+    aes(x = Index, y = Y)
+  )
+  
+  if (input$plot_type == "Line") {
+    p +
+      geom_line(color = "#007bff") +
+      geom_smooth(color = "#6c757d", se = FALSE) +
+      labs(
+        title = paste("Plot dari", input$dep_var),
+        x = "Indeks",
+        y = input$dep_var
+      ) +
+      theme_minimal()
+  } else {
+    p +
+      geom_bar(stat = "identity", fill = "#28a745") +
+      labs(
+        title = paste("Plot dari", input$dep_var),
+        x = "Indeks",
+        y = input$dep_var
+      ) +
+      theme_minimal()
+  }
+})
