@@ -65,10 +65,10 @@ install.packages(c(
 
 ### 📝 Cara Menggunakan Aplikasi
 
-1.  **Unggah File**: Klik tombol "Browse" atau "Upload CSV File" dan pilih file `.csv` Anda. Anda juga bisa menggunakan file `data/epl_results_2022-23_missing.csv.csv` atau `data/epl_results_2022-23.csv.csv`yang sudah disediakan.
-2.  **Pembersihan Data**: Jika data Anda memiliki nilai `NA`, klik tombol "Clean Data" untuk menghapusnya.
-3.  **Reset Data**: Jika Anda ingin kembali ke data asli, klik "Reset Data".
+1.  **Unggah File**: Klik tombol "Browse" atau "Upload CSV File" dan pilih file `.csv` Anda. Anda juga bisa menggunakan file `data/epl_results_2022-23_missing.csv` atau `data/epl_results_2022-23.csv`yang sudah disediakan.
+2.  **Pembersihan Data**: Jika data Anda memiliki nilai `NA`, klik tombol "Bersihkan Data (Hapus NA)" untuk menghapusnya.
+3.  **Reset Data**: Jika Anda ingin kembali ke data asli, klik "Kemablikan ke Data Mentah".
 4.  **Pilih Variabel**: Di sidebar, pilih variabel dependen (Y) dan independen (X) yang akan dianalisis.
-5.  **Hasilkan Analisis**: Klik tombol "Generate Analysis" untuk memperbarui hasil statistik dan visualisasi di semua tab.
+5.  **Hasilkan Analisis**: Klik tombol "Jalankan Analisis" untuk memperbarui hasil statistik dan visualisasi di semua tab.
 
 ---
