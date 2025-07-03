@@ -271,3 +271,38 @@ ui <- page_navbar(
     )
   )
 )
+
+server <- function(input, output, session) {
+  data_raw <- reactive({
+    req(input$file)
+    read_csv(input$file$datapath, locale = locale(encoding = input$encoding))
+  })
+  
+  data_clean <- reactiveVal()
+  
+  observeEvent(input$clean, {
+    df <- data_raw()
+    has_missing <- any(is.na(df))
+    
+    showModal(modalDialog(
+      title = "Confirm Data Cleaning",
+      if (has_missing) {
+        "There are missing values (NA) in the data. Do you want to proceed with cleaning by removing rows with NA?"
+      } else {
+        "No missing values found. Do you want to proceed with cleaning anyway?"
+      },
+      footer = tagList(
+        actionButton("confirm_clean", "Yes", class = "btn-primary"),
+        modalButton("No")
+      )
+    ))
+  })
+  
+  
+  observeEvent(input$confirm_clean, {
+    removeModal()
+    df <- data_raw()
+    df_cleaned <- df[complete.cases(df), ]
+    data_clean(df_cleaned)
+    showNotification("Data cleaned successfully!", type = "message", duration = 5)
+  })
