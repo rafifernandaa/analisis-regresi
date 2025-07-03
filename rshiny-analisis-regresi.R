@@ -292,7 +292,8 @@ ui <- page_navbar(
       type = "pills",
       tabPanel("Statistik Ringkas", card(full_screen = TRUE, card_header("Ringkasan Data"), valueBoxOutput("value1", width = 4), verbatimTextOutput("summary"))),
       tabPanel("Hasil ANOVA", card(full_screen = TRUE, card_header("ANOVA"), uiOutput("anova_var_ui"), verbatimTextOutput("anova"))),
-      tabPanel("Visualisasi", card(full_screen = TRUE, card_header("Plot Data"), plotOutput("data_plot", height = "400px")))
+      tabPanel("Visualisasi", card(full_screen = TRUE, card_header("Plot Data"), plotOutput("data_plot", height = "400px"))),
+      tabPanel("Model Akhir", card(full_screen = TRUE, card_header("Model Regresi Linear"), uiOutput("anova_var_ui"), verbatimTextOutput("model_equation_text"), radioButtons("model_component", "Tampilkan:", choices = c("Koefisien", "Intercept")), verbatimTextOutput("model_component_text")))
     )
   ),
   nav_panel(
@@ -514,6 +515,51 @@ server <- function(input, output, session) {
     }
     formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse="+")))
     summary(aov(formula, data=df))
+  })
+  
+  output$model_equation_text <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var_anova, input$ind_vars_anova)
+    # Ubah semua X jadi faktor
+    for (var in input$ind_vars_anova) {
+      df[[var]] <- as.factor(df[[var]])
+    }
+    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse = "+")))
+    model <- lm(formula, data = df)
+    coefs <- round(coef(model), 3)
+    var_names <- names(coefs)
+    x_names <- var_names[var_names != "(Intercept)"]
+    x_mapping <- paste0("x", seq_along(x_names))
+    names(x_mapping) <- x_names
+    intercept <- round(coefs["(Intercept)"], 3)
+    terms <- c()
+    for (i in seq_along(x_names)) {
+      sign <- ifelse(coefs[x_names[i]] >= 0, "+", "-")
+      value <- abs(round(coefs[x_names[i]], 3))
+      terms <- c(terms, paste0(sign, " ", value, "*", names(x_mapping)[i]))
+    }
+    persamaan <- paste(input$dep_var_anova, "=", intercept, paste(terms, collapse = " "))
+    cat("Persamaan Model Akhir:\n")
+    cat(persamaan)
+  })
+  output$model_component_text <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var_anova, input$ind_vars_anova, input$model_component)
+    for (var in input$ind_vars_anova) {
+      df[[var]] <- as.factor(df[[var]])
+    }
+    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse = "+")))
+    model <- lm(formula, data = df)
+    coefs <- round(coef(model), 3)
+    if (input$model_component == "Koefisien") {
+      x_names <- names(coefs)[names(coefs) != "(Intercept)"]
+      for (i in seq_along(x_names)) {
+        cat(paste0("x", i, ": ", x_names[i], "\n"))
+      }
+    } else {
+      intercept <- coefs["(Intercept)"]
+      cat("Intercept:", round(intercept, 3))
+    }
   })
 
   output$normality <- renderPrint({
