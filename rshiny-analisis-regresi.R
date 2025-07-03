@@ -10,7 +10,6 @@ library(readr)
 library(stringr)
 library(shinyWidgets)
 
-# Tema custom Anda tetap sama (tidak ada perubahan di sini)
 custom_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
@@ -21,7 +20,6 @@ custom_theme <- bs_theme(
   heading_font = font_google("Montserrat")
 ) %>%
   bs_add_rules('
-  /* Semua CSS Anda tetap sama */
   /* Navbar glass effect */
   .navbar {
     background-color: rgba(255, 255, 255, 0.3);
@@ -148,7 +146,6 @@ custom_theme <- bs_theme(
     color: white;
   }
 
-  /* Optional: enhance close button in fullscreen */
   .card.fullscreen-enabled.card-fullscreen .card-header .btn-close,
   .card.card-fullscreen .card-header .btn-close {
     filter: invert(1);
@@ -256,7 +253,6 @@ ui <- page_navbar(
   title = "Data Analysis App",
   theme = custom_theme,
   tags$head(
-    # Anda perlu membuat file `styles.css` di dalam folder `www`
     tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
   ),
   nav_spacer(),
@@ -273,7 +269,6 @@ ui <- page_navbar(
     h5("3. Pengaturan Analisis"),
     uiOutput("data_source_ui"),
     selectInput("plot_type", "Pilih Tipe Plot", choices = c("Garis" = "Line", "Batang" = "Bar")),
-    actionButton("analyze", "Jalankan Analisis", icon = icon("play"), class = "btn-block btn-primary"),
     hr(),
     actionButton("help", "Bantuan", icon = icon("question-circle"), class = "btn-block"),
     uiOutput("var_select_ui")
@@ -291,7 +286,27 @@ ui <- page_navbar(
     tabsetPanel(
       type = "pills",
       tabPanel("Statistik Ringkas", card(full_screen = TRUE, card_header("Ringkasan Data"), valueBoxOutput("value1", width = 4), verbatimTextOutput("summary"))),
-      tabPanel("Hasil ANOVA", card(full_screen = TRUE, card_header("ANOVA"), uiOutput("anova_var_ui"), verbatimTextOutput("anova"))),
+      tabPanel(
+        "Hasil ANOVA",
+        card(
+          full_screen = TRUE,
+          card_header("ANOVA"),
+          uiOutput("anova_var_ui"),
+          verbatimTextOutput("anova_results"),
+          selectInput(
+            "anova_interpretation",
+            "Pilih Interpretasi ANOVA",
+            choices = c(
+              "F-Statistik" = "f_stat",
+              "R-Squared" = "r_squared",
+              "Adjusted R-Squared" = "adj_r_squared",
+              "Koefisien" = "coefficients"
+            ),
+            selected = "f_stat"
+          ),
+          htmlOutput("anova_interpretation_text")
+        )
+      ),
       tabPanel("Visualisasi", card(full_screen = TRUE, card_header("Plot Data"), plotOutput("data_plot", height = "400px"))),
       tabPanel("Model Akhir", card(full_screen = TRUE, card_header("Model Regresi Linear"), uiOutput("anova_var_ui"), verbatimTextOutput("model_equation_text"), radioButtons("model_component", "Tampilkan:", choices = c("Koefisien", "Intercept")), verbatimTextOutput("model_component_text")))
     )
@@ -300,44 +315,57 @@ ui <- page_navbar(
     "Uji Asumsi",
     tabsetPanel(
       type = "pills",
-      tabPanel("Uji Normalitas", card(full_screen = TRUE, card_header("Uji Shapiro-Wilk & Anderson-Darling"), verbatimTextOutput("normality"))),
-      tabPanel("Uji Homoskedastisitas", card(full_screen = TRUE, card_header("Uji Levene"), verbatimTextOutput("levene"))),
+      tabPanel(
+        "Uji Normalitas",
+        card(
+          full_screen = TRUE,
+          card_header("Uji Shapiro-Wilk & Anderson-Darling"),
+          verbatimTextOutput("normality_results"),
+          htmlOutput("normality_interpretation")
+        )
+      ),
+      tabPanel(
+        "Uji Homoskedastisitas",
+        card(
+          full_screen = TRUE,
+          card_header("Uji Levene"),
+          verbatimTextOutput("levene_results"),
+          htmlOutput("levene_interpretation")
+        )
+      ),
       tabPanel("Uji Normalitas Residual", card(full_screen = TRUE, card_header("Histogram & Uji Normalitas Residual"), plotOutput("residual_plot"), verbatimTextOutput("residual_test"))),
       tabPanel("Uji Multikolinearitas", card(full_screen = TRUE, card_header("Uji Multikolinearitas dengan VIF"), verbatimTextOutput("vif_output"))),
       tabPanel("4-Plot Diagnostic",
                card(full_screen = TRUE,
                     card_header("EDA Residual Diagnostics (4-Plot)"),
-                    # Baris pertama untuk plot
                     fluidRow(
                       column(6, plotOutput("resid_runseq")),
                       column(6, plotOutput("resid_lag"))
                     ),
-                    # Baris kedua untuk plot
                     fluidRow(
                       column(6, plotOutput("resid_hist")),
                       column(6, plotOutput("resid_qq"))
                     ),
-                    # Baris baru untuk interpretasi
                     fluidRow(
                       column(12,
-                             hr(), # Garis pemisah
+                             hr(),
                              h4("Interpretasi 4-Plot Diagnostik"),
                              p("Gunakan keempat plot di atas untuk menguji asumsi-asumsi penting pada residual model Anda. Residual adalah selisih antara nilai aktual dan nilai prediksi model."),
                              tags$ul(
                                tags$li(
-                                 tags$strong("1. Run Sequence Plot:"), 
+                                 tags$strong("1. Run Sequence Plot:"),
                                  " Plot ini membantu memeriksa asumsi 'lokasi' dan 'variasi' yang tetap. Idealnya, plot akan menunjukkan titik-titik data yang tersebar secara acak di sekitar garis tengah (nol) tanpa ada tren naik atau turun (menandakan lokasi tetap), dan dengan sebaran vertikal yang konsisten di sepanjang plot (menandakan variasi tetap)."
                                ),
                                tags$li(
-                                 tags$strong("2. Lag Plot:"), 
+                                 tags$strong("2. Lag Plot:"),
                                  " Plot ini digunakan untuk menguji keacakan (randomness) residual. Jika residual benar-benar acak, plot ini akan terlihat seperti sebaran titik tanpa pola atau struktur yang jelas (misalnya, tidak membentuk garis atau kurva)."
                                ),
                                tags$li(
-                                 tags$strong("3. Histogram:"), 
+                                 tags$strong("3. Histogram:"),
                                  " Plot ini menunjukkan distribusi dari residual. Jika asumsi normalitas terpenuhi, histogram akan memiliki bentuk seperti lonceng (bell-shaped) yang simetris, yang mengindikasikan distribusi mendekati normal."
                                ),
                                tags$li(
-                                 tags$strong("4. Normal Probability Plot (Q-Q Plot):"), 
+                                 tags$strong("4. Normal Probability Plot (Q-Q Plot):"),
                                  " Ini adalah tes visual yang paling umum untuk asumsi normalitas. Jika residual berdistribusi normal, titik-titik data akan mengikuti garis lurus diagonal berwarna merah."
                                )
                              ),
@@ -346,18 +374,19 @@ ui <- page_navbar(
                     )
                )
       )
-  ))
+    )
+  )
 )
 
 # --- SERVER (Logic) ---
 server <- function(input, output, session) {
-
+  
   rv <- reactiveValues(
     raw_data = NULL,      # Untuk menyimpan data asli
     cleaned_data = NULL,  # Untuk menyimpan data yang sudah dibersihkan
     is_cleaned = FALSE    # Flag untuk menandai apakah pembersihan sudah dilakukan
   )
-
+  
   # 1. Saat file diunggah, reset semua state
   observeEvent(input$file, {
     req(input$file)
@@ -367,32 +396,32 @@ server <- function(input, output, session) {
       showNotification(paste("Gagal membaca file:", e$message), type = "error", duration = 10)
       return(NULL)
     })
-
+    
     if (!is.null(df)) {
       rv$raw_data <- df
-      rv$cleaned_data <- NULL # Reset data bersih
-      rv$is_cleaned <- FALSE  # Reset status pembersihan
+      rv$cleaned_data <- NULL
+      rv$is_cleaned <- FALSE
       showNotification("File berhasil diunggah.", type = "message")
     }
   })
-
+  
   # 2. Logika untuk membersihkan data
   observeEvent(input$confirm_clean, {
     removeModal()
-
+    
     df_cleaned <- rv$raw_data[complete.cases(rv$raw_data), ]
-
+    
     if (nrow(df_cleaned) == 0) {
       showNotification("Peringatan: Semua baris mengandung NA dan telah dihapus.", type = "warning", duration = 10)
     } else {
       rows_removed <- nrow(rv$raw_data) - nrow(df_cleaned)
       showNotification(paste(rows_removed, "baris dengan NA berhasil dihapus."), type = "message")
     }
-
-    rv$cleaned_data <- df_cleaned # Simpan data bersih
-    rv$is_cleaned <- TRUE        # Tandai bahwa pembersihan sudah selesai
+    
+    rv$cleaned_data <- df_cleaned
+    rv$is_cleaned <- TRUE
   })
-
+  
   # 3. Tombol Reset: mengembalikan state ke kondisi awal
   observeEvent(input$reset, {
     req(rv$raw_data)
@@ -401,7 +430,7 @@ server <- function(input, output, session) {
     updateRadioButtons(session, "data_source_selector", selected = "raw")
     showNotification("Data telah dikembalikan ke kondisi mentah.", type = "default")
   })
-
+  
   # UI dinamis untuk memilih sumber data analisis
   output$data_source_ui <- renderUI({
     req(rv$raw_data)
@@ -416,32 +445,32 @@ server <- function(input, output, session) {
       selected = "raw"
     )
   })
-
+  
   # Reactive utama yang menyediakan data untuk SEMUA analisis
   analysis_data <- reactive({
     req(rv$raw_data, input$data_source_selector)
-
+    
     if (input$data_source_selector == "clean" && rv$is_cleaned) {
       return(rv$cleaned_data)
     } else {
       return(rv$raw_data)
     }
   })
-
-  # --- Output dan Analisis sekarang menggunakan `analysis_data()` ---
-
+  
+  # --- Output dan Analisis menggunakan `analysis_data()` ---
+  
   output$raw_table <- renderDT({
     req(rv$raw_data)
     datatable(rv$raw_data, options = list(scrollX = TRUE, scrollY = "300px", pageLength = 10), caption = "Data asli yang diunggah.")
   })
-
+  
   output$cleaned_table_preview <- renderDT({
     if (!rv$is_cleaned || is.null(rv$cleaned_data)) {
       return(datatable(data.frame(Status = "Data belum dibersihkan atau tidak ada data bersih."), options = list(dom = 't')))
     }
     datatable(rv$cleaned_data, options = list(scrollX = TRUE, scrollY = "300px", pageLength = 10), caption = "Hasil setelah penghapusan baris dengan nilai NA.")
   })
-
+  
   output$var_select_ui <- renderUI({
     df <- analysis_data()
     req(df)
@@ -454,7 +483,7 @@ server <- function(input, output, session) {
       )
     }
   })
-
+  
   output$value1 <- renderValueBox({
     df <- analysis_data()
     req(df)
@@ -462,39 +491,38 @@ server <- function(input, output, session) {
     source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
     valueBox(count, paste("Jumlah Baris di", source_text), icon = icon("list"))
   })
-
+  
   output$summary <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var, input$ind_vars)
     if (nrow(df) == 0) return("Data kosong.")
-
+    
     source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
-    cat(paste("### Ringkasan berdasarkan", source_text, "###\n\n"))
-    cat("Ringkasan untuk Variabel Dependen (Y):\n")
-    print(summary(df[[input$dep_var]]))
-    cat("\nRingkasan untuk Variabel Independen (X):\n")
-    print(summary(df[, input$ind_vars, drop = FALSE]))
+    list(
+      "Ringkasan berdasarkan" = source_text,
+      "Variabel Dependen (Y)" = summary(df[[input$dep_var]]),
+      "Variabel Independen (X)" = summary(df[, input$ind_vars, drop = FALSE])
+    )
   })
-
+  
   output$data_plot <- renderPlot({
     df <- analysis_data()
     req(df, input$plot_type, input$dep_var)
     if (nrow(df) == 0) return(NULL)
-
+    
     df_sample <- df
-
     x_var <- seq_len(nrow(df_sample))
     y_val <- df_sample[[input$dep_var]]
-
+    
     p <- ggplot(data.frame(Index = x_var, Y = y_val), aes(x = Index, y = Y))
-
+    
     if (input$plot_type == "Line") {
       p + geom_line(color = "#007bff") + geom_smooth(color = "#6c757d", se = FALSE) + labs(title = paste("Plot dari", input$dep_var), x = "Indeks", y = input$dep_var) + theme_minimal()
     } else {
       p + geom_bar(stat = "identity", fill = "#28a745") + labs(title = paste("Plot dari", input$dep_var), x = "Indeks", y = input$dep_var) + theme_minimal()
     }
   })
-
+  
   output$anova_var_ui <- renderUI({
     df <- analysis_data()
     req(df)
@@ -505,22 +533,84 @@ server <- function(input, output, session) {
       )
     }
   })
-
-  output$anova <- renderPrint({
+  
+  output$anova_results <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var_anova, input$ind_vars_anova)
     if(nrow(df) == 0) return("Tidak bisa melakukan ANOVA pada data kosong.")
+    
     for(var in input$ind_vars_anova){
       df[[var]] <- as.factor(df[[var]])
     }
+    
     formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse="+")))
-    summary(aov(formula, data=df))
+    model <- lm(formula, data=df)
+    summary(model)
+  })
+  
+  output$anova_interpretation_text <- renderUI({
+    df <- analysis_data()
+    req(df, input$dep_var_anova, input$ind_vars_anova, input$anova_interpretation)
+    if(nrow(df) == 0) return(HTML("<p>Tidak ada data untuk diinterpretasikan.</p>"))
+    
+    for(var in input$ind_vars_anova){
+      df[[var]] <- as.factor(df[[var]])
+    }
+    
+    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse="+")))
+    model <- lm(formula, data=df)
+    model_summary <- summary(model)
+    
+    f_stat <- model_summary$fstatistic
+    f_value <- f_stat[["value"]]
+    f_pvalue <- pf(f_stat[["value"]], f_stat[["numdf"]], f_stat[["dendf"]], lower.tail = FALSE)
+    r_squared <- model_summary$r.squared
+    adj_r_squared <- model_summary$adj.r.squared
+    coef_summary <- model_summary$coefficients
+    
+    interpretation <- switch(input$anova_interpretation,
+                             "f_stat" = paste0(
+                               "<h4>F-Statistik</h4>",
+                               "<p>Nilai F = ", round(f_value, 3), ", p-value = ", format.pval(f_pvalue, digits=3), ".</p>",
+                               if(f_pvalue < 0.05) {
+                                 "<p>Model secara keseluruhan signifikan secara statistik (p < 0.05), menunjukkan bahwa setidaknya satu variabel independen memiliki pengaruh signifikan terhadap variabel dependen.</p>"
+                               } else {
+                                 "<p>Model tidak signifikan secara statistik (p >= 0.05), menunjukkan bahwa variabel independen secara kolektif tidak memiliki pengaruh signifikan terhadap variabel dependen.</p>"
+                               }
+                             ),
+                             "r_squared" = paste0(
+                               "<h4>R-Squared</h4>",
+                               "<p>Nilai R-Squared = ", round(r_squared, 3), ".</p>",
+                               "<p>Ini menunjukkan bahwa ", round(r_squared * 100, 1), "% variasi dalam variabel dependen (", input$dep_var_anova, ") dapat dijelaskan oleh variabel independen dalam model.</p>"
+                             ),
+                             "adj_r_squared" = paste0(
+                               "<h4>Adjusted R-Squared</h4>",
+                               "<p>Nilai Adjusted R-Squared = ", round(adj_r_squared, 3), ".</p>",
+                               "<p>Nilai ini menyesuaikan R-Squared untuk jumlah variabel dalam model, memberikan ukuran yang lebih akurat tentang goodness-of-fit. Nilai yang lebih tinggi menunjukkan model yang lebih baik.</p>"
+                             ),
+                             "coefficients" = {
+                               coef_text <- "<h4>Koefisien dan Signifikansi</h4><ul>"
+                               for(i in 1:nrow(coef_summary)) {
+                                 var_name <- rownames(coef_summary)[i]
+                                 coef_val <- coef_summary[i, "Estimate"]
+                                 p_val <- coef_summary[i, "Pr(>|t|)"]
+                                 coef_text <- paste0(coef_text, "<li>", var_name, ": Koefisien = ", round(coef_val, 3), ", p-value = ", format.pval(p_val, digits=3), "<br>")
+                                 coef_text <- paste0(coef_text, if(p_val < 0.05) {
+                                   paste0("Variabel ini signifikan secara statistik (p < 0.05), menunjukkan bahwa ", var_name, " memiliki pengaruh signifikan terhadap ", input$dep_var_anova, ".")
+                                 } else {
+                                   paste0("Variabel ini tidak signifikan secara statistik (p >= 0.05), menunjukkan bahwa ", var_name, " tidak memiliki pengaruh signifikan terhadap ", input$dep_var_anova, ".")
+                                 }, "</li>")
+                               }
+                               paste0(coef_text, "</ul>")
+                             }
+    )
+    
+    HTML(interpretation)
   })
   
   output$model_equation_text <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var_anova, input$ind_vars_anova)
-    # Ubah semua X jadi faktor
     for (var in input$ind_vars_anova) {
       df[[var]] <- as.factor(df[[var]])
     }
@@ -542,6 +632,7 @@ server <- function(input, output, session) {
     cat("Persamaan Model Akhir:\n")
     cat(persamaan)
   })
+  
   output$model_component_text <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var_anova, input$ind_vars_anova, input$model_component)
@@ -561,77 +652,107 @@ server <- function(input, output, session) {
       cat("Intercept:", round(intercept, 3))
     }
   })
-
-  output$normality <- renderPrint({
+  
+  output$normality_results <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var)
     if(nrow(df) == 0) return("Tidak bisa melakukan uji normalitas pada data kosong.")
     y <- df[[input$dep_var]]
     if(!is.numeric(y)){
-      cat("Uji normalitas memerlukan variabel dependen numerik.")
+      "Uji normalitas memerlukan variabel dependen numerik."
     } else {
-      list("Uji Shapiro-Wilk"=shapiro.test(y), "Uji Anderson-Darling"=ad.test(y))
+      list(
+        "Uji Shapiro-Wilk" = shapiro.test(y),
+        "Uji Anderson-Darling" = ad.test(y)
+      )
     }
   })
-
-  output$levene <- renderPrint({
+  
+  output$normality_interpretation <- renderUI({
+    df <- analysis_data()
+    req(df, input$dep_var)
+    if(nrow(df) == 0) return(HTML("<p>Tidak ada data untuk diinterpretasikan.</p>"))
+    y <- df[[input$dep_var]]
+    if(!is.numeric(y)){
+      HTML("<p>Uji normalitas memerlukan variabel dependen numerik.</p>")
+    } else {
+      shapiro_result <- shapiro.test(y)
+      ad_result <- ad.test(y)
+      
+      interpretation <- paste0(
+        "<h4>Interpretasi Uji Normalitas</h4>",
+        "<h5>Uji Shapiro-Wilk</h5>",
+        "<p>p-value = ", format.pval(shapiro_result$p.value, digits=3), ": ",
+        if(shapiro_result$p.value < 0.05) {
+          "Data tidak berdistribusi normal (p < 0.05). Ini menunjukkan bahwa asumsi normalitas untuk ANOVA mungkin tidak terpenuhi."
+        } else {
+          "Tidak ada bukti bahwa data tidak berdistribusi normal (p >= 0.05). Asumsi normalitas untuk ANOVA mungkin terpenuhi."
+        }, "</p>",
+        "<h5>Uji Anderson-Darling</h5>",
+        "<p>p-value = ", format.pval(ad_result$p.value, digits=3), ": ",
+        if(ad_result$p.value < 0.05) {
+          "Data tidak berdistribusi normal (p < 0.05). Ini mendukung temuan bahwa asumsi normalitas mungkin tidak terpenuhi."
+        } else {
+          "Tidak ada bukti bahwa data tidak berdistribusi normal (p >= 0.05). Asumsi normalitas mungkin terpenuhi."
+        }, "</p>"
+      )
+      
+      HTML(interpretation)
+    }
+  })
+  
+  output$levene_results <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var, input$ind_vars)
     if(nrow(df) == 0) return("Tidak bisa melakukan Uji Levene pada data kosong.")
     y <- df[[input$dep_var]]
     if(!is.numeric(y)){
-      cat("Uji Levene memerlukan variabel dependen numerik.")
+      "Uji Levene memerlukan variabel dependen numerik."
     } else {
       for(var in input$ind_vars){
         df[[var]] <- as.factor(df[[var]])
       }
       formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse="*")))
-      print(leveneTest(formula, data=df))
+      leveneTest(formula, data=df)
     }
   })
-
-  # Bagian modal konfirmasi dan bantuan
-  observeEvent(input$clean, {
-    req(rv$raw_data)
-    has_missing <- any(is.na(rv$raw_data))
-    showModal(modalDialog(
-      title = "Konfirmasi Pembersihan Data",
-      if (has_missing) "Lanjutkan dengan menghapus baris yang mengandung NA?" else "Tidak ada nilai NA yang ditemukan.",
-      footer = if (has_missing) tagList(actionButton("confirm_clean", "Ya", class = "btn-primary"), modalButton("Batal")) else modalButton("OK")
-    ))
+  
+  output$levene_interpretation <- renderUI({
+    df <- analysis_data()
+    req(df, input$dep_var, input$ind_vars)
+    if(nrow(df) == 0) return(HTML("<p>Tidak ada data untuk diinterpretasikan.</p>"))
+    y <- df[[input$dep_var]]
+    if(!is.numeric(y)){
+      HTML("<p>Uji Levene memerlukan variabel dependen numerik.</p>")
+    } else {
+      for(var in input$ind_vars){
+        df[[var]] <- as.factor(df[[var]])
+      }
+      formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse="*")))
+      levene_result <- leveneTest(formula, data=df)
+      p_val <- levene_result$"Pr(>F)"[1]
+      
+      interpretation <- paste0(
+        "<h4>Interpretasi Uji Homoskedastisitas (Levene)</h4>",
+        "<p>p-value = ",
+        if(is.na(p_val)) {
+          "tidak tersedia (mungkin karena data tidak memadai)."
+        } else {
+          format.pval(p_val, digits=3)
+        }, ": ",
+        if(is.na(p_val)) {
+          "Interpretasi tidak dapat dilakukan karena data tidak memadai."
+        } else if(p_val < 0.05) {
+          "Variansi antar kelompok tidak sama (p < 0.05). Asumsi homoskedastisitas untuk ANOVA tidak terpenuhi, sehingga hasil ANOVA mungkin tidak valid."
+        } else {
+          "Tidak ada bukti bahwa variansi antar kelompok berbeda (p >= 0.05). Asumsi homoskedastisitas untuk ANOVA mungkin terpenuhi."
+        }, "</p>"
+      )
+      
+      HTML(interpretation)
+    }
   })
-
-  observeEvent(input$analyze, {
-    req(analysis_data())
-    showModal(modalDialog(
-      title = "Konfirmasi Analisis",
-      "Ini akan menjalankan semua analisis berdasarkan sumber data dan variabel yang Anda pilih. Lanjutkan?",
-      footer = tagList(actionButton("confirm_analyze_run", "Ya", class = "btn-primary"), modalButton("Tidak"))
-    ))
-  })
-
-  observeEvent(input$confirm_analyze_run, {
-    removeModal()
-    showNotification("Analisis berhasil dibuat!", type = "message")
-  })
-
-  observeEvent(input$help, {
-    showModal(modalDialog(
-      title = "Bantuan: Aplikasi Analisis Data",
-      "Aplikasi ini memungkinkan Anda untuk:",
-      tags$ul(
-        tags$li("Mengunggah file CSV untuk dianalisis."),
-        tags$li("Membersihkan data dengan menghapus baris NA (opsional)."),
-        tags$li("Memilih antara data mentah atau data bersih untuk dianalisis."),
-        tags$li("Menghasilkan statistik ringkas dan hasil ANOVA."),
-        tags$li("Melakukan uji asumsi (Normalitas dan Homoskedastisitas)."),
-        tags$li("Memvisualisasikan data dengan plot.")
-      ),
-      easyClose = TRUE
-    ))
-  })
-
-  # Residual Plot
+  
   output$residual_plot <- renderPlot({
     df <- analysis_data()
     req(df, input$dep_var, input$ind_vars)
@@ -642,8 +763,7 @@ server <- function(input, output, session) {
     
     hist(resid, col = "#00c2cb", main = "Histogram Residual", xlab = "Nilai Residual", breaks = 20)
   })
-
-  # Residual Normality Test
+  
   output$residual_test <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var, input$ind_vars)
@@ -664,7 +784,7 @@ server <- function(input, output, session) {
     } else {
       cat("Residual berdistribusi normal pada tingkat kepercayaan 95% (p-value ≥ 0.05)\n")
     }
-
+    
     cat("\nAnderson-Darling:\n")
     print(ad)
     cat("Interpretasi: Berdasarkan Uji Anderson-Darling dengan taraf signifikansi 5%, \n")
@@ -674,17 +794,16 @@ server <- function(input, output, session) {
       cat("Residual berdistribusi normal pada tingkat kepercayaan 95% (p-value ≥ 0.05)\n")
     }
   })
-
-  # VIF - Multicollinearity 
+  
   output$vif_output <- renderPrint({
     df <- analysis_data()
     req(df, input$dep_var, input$ind_vars)
-
+    
     formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+")))
     model <- lm(formula, data = df)
-
+    
     vif_values <- vif(model)
-
+    
     cat("VIF (Variance Inflation Factor):\n")
     
     interpretations <- sapply(vif_values, function(val) {
@@ -694,13 +813,13 @@ server <- function(input, output, session) {
     })
     
     output_df <- data.frame(
-    VIF = round(unname(vif_values), 4),
-    Keterangan = interpretations
+      VIF = round(unname(vif_values), 4),
+      Keterangan = interpretations
     )
-
-    print(output_df, row_names = FALSE)
+    
+    print(output_df, row.names = FALSE)
   })
-  # Run Sequence Plot
+  
   output$resid_runseq <- renderPlot({
     req(analysis_data(), input$dep_var, input$ind_vars)
     df <- analysis_data()
@@ -711,7 +830,6 @@ server <- function(input, output, session) {
     abline(h = 0, col = "red", lty = 2)
   })
   
-  # Lag Plot
   output$resid_lag <- renderPlot({
     req(analysis_data(), input$dep_var, input$ind_vars)
     df <- analysis_data()
@@ -722,7 +840,6 @@ server <- function(input, output, session) {
     abline(h = 0, v = 0, col = "gray", lty = 2)
   })
   
-  # Histogram
   output$resid_hist <- renderPlot({
     req(analysis_data(), input$dep_var, input$ind_vars)
     df <- analysis_data()
@@ -732,7 +849,6 @@ server <- function(input, output, session) {
     hist(resid, main = "Histogram of Residuals", xlab = "Residuals", col = "darkgreen", border = "white", breaks = 20)
   })
   
-  # QQ Plot
   output$resid_qq <- renderPlot({
     req(analysis_data(), input$dep_var, input$ind_vars)
     df <- analysis_data()
@@ -741,6 +857,34 @@ server <- function(input, output, session) {
     
     qqnorm(resid, main = "Normal Probability Plot")
     qqline(resid, col = "red", lty = 2)
+  })
+  
+  # Bagian modal konfirmasi dan bantuan
+  observeEvent(input$clean, {
+    req(rv$raw_data)
+    has_missing <- any(is.na(rv$raw_data))
+    showModal(modalDialog(
+      title = "Konfirmasi Pembersihan Data",
+      if (has_missing) "Lanjutkan dengan menghapus baris yang mengandung NA?" else "Tidak ada nilai NA yang ditemukan.",
+      footer = if (has_missing) tagList(actionButton("confirm_clean", "Ya", class = "btn-primary"), modalButton("Batal")) else modalButton("OK")
+    ))
+  })
+  
+  observeEvent(input$help, {
+    showModal(modalDialog(
+      title = "Bantuan: Aplikasi Analisis Data",
+      "Aplikasi ini memungkinkan Anda untuk:",
+      tags$ul(
+        tags$li("Mengunggah file CSV untuk dianalisis."),
+        tags$li("Membersihkan data dengan menghapus baris NA (opsional)."),
+        tags$li("Memilih antara data mentah atau data bersih untuk dianalisis."),
+        tags$li("Menghasilkan statistik ringkas dan hasil ANOVA."),
+        tags$li("Melakukan uji asumsi"),
+        tags$li("Memvisualisasikan data dengan plot."),
+        tags$li("Ekspor hasil analisis dalam bentuk pdf.")
+      ),
+      easyClose = TRUE
+    ))
   })
 }
 
