@@ -219,3 +219,55 @@ custom_theme <- bs_theme(
       border: 1px solid #ff6200;
     }
   ')
+
+ui <- page_navbar(
+  title = "Data Analysis App",
+  theme = custom_theme,
+  tags$head(
+    tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
+  ),
+  nav_spacer(),
+  sidebar = sidebar(
+    width = 300,
+    h5("1. Upload Data"),
+    fileInput("file", "Pilih File CSV", accept = ".csv", buttonLabel = "Cari..."),
+    selectInput("encoding", "File Encoding", choices = c("UTF-8", "Latin1", "ASCII")),
+    hr(),
+    h5("2. Pembersihan Data (Opsional)"),
+    actionButton("clean", "Bersihkan Data (Hapus NA)", icon = icon("broom"), class = "btn-block"),
+    actionButton("reset", "Kembalikan ke Data Mentah", icon = icon("undo"), class = "btn-block btn-secondary"),
+    hr(),
+    h5("3. Pengaturan Analisis"),
+    uiOutput("data_source_ui"),
+    selectInput("plot_type", "Pilih Tipe Plot", choices = c("Garis" = "Line", "Batang" = "Bar")),
+    actionButton("analyze", "Jalankan Analisis", icon = icon("play"), class = "btn-block btn-primary"),
+    hr(),
+    actionButton("help", "Bantuan", icon = icon("question-circle"), class = "btn-block"),
+    uiOutput("var_select_ui")
+  ),
+  nav_panel(
+    "Pengolahan Data",
+    layout_columns(
+      col_widths = c(12),
+      card(full_screen = TRUE, card_header("Pratinjau Data Mentah"), DTOutput("raw_table")),
+      card(full_screen = TRUE, card_header("Pratinjau Data Bersih"), DTOutput("cleaned_table_preview"))
+    )
+  ),
+  nav_panel(
+    "Ringkasan & Visualisasi",
+    tabsetPanel(
+      type = "pills",
+      tabPanel("Statistik Ringkas", card(full_screen = TRUE, card_header("Ringkasan Data"), valueBoxOutput("value1", width = 4), verbatimTextOutput("summary"))),
+      tabPanel("Hasil ANOVA", card(full_screen = TRUE, card_header("ANOVA"), uiOutput("anova_var_ui"), verbatimTextOutput("anova"))),
+      tabPanel("Visualisasi", card(full_screen = TRUE, card_header("Plot Data"), plotOutput("data_plot", height = "400px")))
+    )
+  ),
+  nav_panel(
+    "Uji Asumsi",
+    tabsetPanel(
+      type = "pills",
+      tabPanel("Uji Normalitas", card(full_screen = TRUE, card_header("Uji Shapiro-Wilk & Anderson-Darling"), verbatimTextOutput("normality"))),
+      tabPanel("Uji Homoskedastisitas", card(full_screen = TRUE, card_header("Uji Levene"), verbatimTextOutput("levene")))
+    )
+  )
+)
