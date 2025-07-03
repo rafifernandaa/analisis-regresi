@@ -10,6 +10,7 @@ library(readr)
 library(stringr)
 library(shinyWidgets)
 
+# Tema custom Anda tetap sama (tidak ada perubahan di sini)
 custom_theme <- bs_theme(
   version = 5,
   bg = "#ffffff",
@@ -20,210 +21,242 @@ custom_theme <- bs_theme(
   heading_font = font_google("Montserrat")
 ) %>%
   bs_add_rules('
-    /* Navbar glass effect */
-    .navbar {
-      background-color: rgba(255, 255, 255, 0.3);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
-    }
-    /* Sidebar with glassmorphism */
-    .sidebar {
-      background-color: rgba(255, 255, 255, 0.3);
-      border-right: 1px solid rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-      overflow-y: auto;
-    }
-    /* Scrollbar minimalis di sidebar */
-    .sidebar ::-webkit-scrollbar {
-      width: 6px;
-    }
-    .sidebar ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .sidebar ::-webkit-scrollbar-thumb {
-      background: rgba(200, 200, 200, 0.4);
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-    .sidebar ::-webkit-scrollbar-thumb:hover {
-      background: rgba(160, 160, 160, 0.6);
-    }
-    /* Perhalus transisi */
-    .sidebar, .sidebar * {
-      transition: all 0.3s ease;
-    }
-    /* Tombol lebih lembut saat diklik */
-    .btn {
-      transition: all 0.2s ease-in-out;
-    }
-    .btn:active {
-      transform: scale(0.97);
-    }
-    /* Card style */
-    .card {
-      background: #ffffff;
-      border: none;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.05), -2px -2px 5px rgba(255,255,255,0.8);
-      border-radius: 12px;
-      overflow: hidden;
-      position: relative;
-    }
-    /* Fullscreen card overlay style */
-    .card.fullscreen-enabled.card-fullscreen,
-    .card.card-fullscreen {
-      background: rgba(255, 255, 255, 0.2) !important;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 24px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 90%;
-      height: 90%;
-      z-index: 1050;
-      display: flex;
-      flex-direction: column;
-    }
-    /* Highlight title bar of fullscreen card */
-    .card.fullscreen-enabled.card-fullscreen .card-header,
-    .card.card-fullscreen .card-header {
-      background: linear-gradient(to right, #ff7f2a, #ff6200);
-      color: white;
-      font-weight: bold;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-      padding: 12px 20px;
-      font-size: 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    /* Navigation buttons inspired by the image */
-    .card.fullscreen-enabled.card-fullscreen .nav-btn,
-    .card.card-fullscreen .nav-btn {
-      background: rgba(200, 200, 200, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin: 5px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .card.fullscreen-enabled.card-fullscreen .nav-btn:hover,
-    .card.card-fullscreen .nav-btn:hover {
-      background: rgba(160, 160, 160, 0.4);
-    }
-    .card.fullscreen-enabled.card-fullscreen .nav-btn.active,
-    .card.card-fullscreen .nav-btn.active {
-      background: #ff6200;
-      color: white;
-    }
-    /* Optional: enhance close button in fullscreen */
-    .card.fullscreen-enabled.card-fullscreen .card-header .btn-close,
-    .card.card-fullscreen .card-header .btn-close {
-      filter: invert(1);
-    }
-    /* Modal notification style */
-    .modal-content {
-      background: rgba(255, 255, 255, 0.2) !important;
-      backdrop-filter: blur(15px);
-      color: #333;
-      -webkit-backdrop-filter: blur(15px);
-      border-radius: 15px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    }
-    .modal-header {
-      background: linear-gradient(to right, #ff7f2a, #ff6200);
-      color: white;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      border-top-left-radius: 14px;
-      border-top-right-radius: 14px;
-      padding: 10px 15px;
-    }
-    .modal-footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    /* Notification style */
-    .shiny-notification {
-      background: rgba(255, 255, 255, 0.2) !important;
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-      color: #333;
-      border-radius: 10px;
-      padding: 10px 15px;
-    }
-    .btn-primary {
-      background: linear-gradient(145deg, #ff7f2a, #ff6200);
-      box-shadow: 5px 5px 15px #e0e0e0, -5px -5px 15px #ffffff;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-    .btn-primary:hover {
-      background: linear-gradient(145deg, #ff6200, #ff7f2a);
-      box-shadow: 2px 2px 5px #e0e0e0, -2px -2px 5px #ffffff;
-    }
-    body {
-      background: #ffffff;
-    }
-    .content {
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      height: auto;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    /* Ensure DT table fills fullscreen card and retains pagination */
-    .card.fullscreen-enabled.card-fullscreen .dataTables_scrollBody,
-    .card.card-fullscreen .dataTables_scrollBody {
-      flex-grow: 1;
-      overflow: auto;
-    }
-    .dataTables_paginate {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 10px;
-    }
-    .dataTables_paginate .paginate_button {
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 5px 10px;
-      margin: 0 2px;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    .dataTables_paginate .paginate_button:hover {
-      background: #f0f0f0;
-    }
-    .dataTables_paginate .paginate_button.current {
-      background: #ff6200;
-      color: white;
-      border: 1px solid #ff6200;
-    }
+  /* Semua CSS Anda tetap sama */
+  /* Navbar glass effect */
+  .navbar {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Sidebar with glassmorphism */
+  .sidebar {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+  }
+
+  /* Scrollbar minimalis di sidebar */
+  .sidebar ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .sidebar ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar ::-webkit-scrollbar-thumb {
+    background: rgba(200, 200, 200, 0.4);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .sidebar ::-webkit-scrollbar-thumb:hover {
+    background: rgba(160, 160, 160, 0.6);
+  }
+
+  /* Perhalus transisi */
+  .sidebar, .sidebar * {
+    transition: all 0.3s ease;
+  }
+
+  /* Tombol lebih lembut saat diklik */
+  .btn {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  /* Card style */
+  .card {
+    background: #ffffff;
+    border: none;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.05), -2px -2px 5px rgba(255,255,255,0.8);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Fullscreen card overlay style */
+  .card.fullscreen-enabled.card-fullscreen,
+  .card.card-fullscreen {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    height: 90%;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Highlight title bar of fullscreen card */
+  .card.fullscreen-enabled.card-fullscreen .card-header,
+  .card.card-fullscreen .card-header {
+    background: linear-gradient(to right, #ff7f2a, #ff6200);
+    color: white;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 12px 20px;
+    font-size: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Navigation buttons inspired by the image */
+  .card.fullscreen-enabled.card-fullscreen .nav-btn,
+  .card.card-fullscreen .nav-btn {
+    background: rgba(200, 200, 200, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .card.fullscreen-enabled.card-fullscreen .nav-btn:hover,
+  .card.card-fullscreen .nav-btn:hover {
+    background: rgba(160, 160, 160, 0.4);
+  }
+
+  .card.fullscreen-enabled.card-fullscreen .nav-btn.active,
+  .card.card-fullscreen .nav-btn.active {
+    background: #ff6200;
+    color: white;
+  }
+
+  /* Optional: enhance close button in fullscreen */
+  .card.fullscreen-enabled.card-fullscreen .card-header .btn-close,
+  .card.card-fullscreen .card-header .btn-close {
+    filter: invert(1);
+  }
+
+  /* Modal notification style */
+  .modal-content {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(15px);
+    color: #333;
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-header {
+    background: linear-gradient(to right, #ff7f2a, #ff6200);
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    padding: 10px 15px;
+  }
+
+  .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Notification style */
+  .shiny-notification {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    color: #333;
+    border-radius: 10px;
+    padding: 10px 15px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(145deg, #ff7f2a, #ff6200);
+    box-shadow: 5px 5px 15px #e0e0e0, -5px -5px 15px #ffffff;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(145deg, #ff6200, #ff7f2a);
+    box-shadow: 2px 2px 5px #e0e0e0, -2px -2px 5px #ffffff;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .content {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  /* Ensure DT table fills fullscreen card and retains pagination */
+  .card.fullscreen-enabled.card-fullscreen .dataTables_scrollBody,
+  .card.card-fullscreen .dataTables_scrollBody {
+    flex-grow: 1;
+    overflow: auto;
+  }
+
+  .dataTables_paginate {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .dataTables_paginate .paginate_button {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 5px 10px;
+    margin: 0 2px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .dataTables_paginate .paginate_button:hover {
+    background: #f0f0f0;
+  }
+
+  .dataTables_paginate .paginate_button.current {
+    background: #ff6200;
+    color: white;
+    border: 1px solid #ff6200;
+  }
   ')
 
+# --- UI (User Interface) ---
 ui <- page_navbar(
   title = "Data Analysis App",
   theme = custom_theme,
   tags$head(
+    # Anda perlu membuat file `styles.css` di dalam folder `www`
     tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
   ),
   nav_spacer(),
@@ -267,21 +300,22 @@ ui <- page_navbar(
     tabsetPanel(
       type = "pills",
       tabPanel("Uji Normalitas", card(full_screen = TRUE, card_header("Uji Shapiro-Wilk & Anderson-Darling"), verbatimTextOutput("normality"))),
-      tabPanel("Uji Homoskedastisitas", card(full_screen = TRUE, card_header("Uji Levene"), verbatimTextOutput("levene")))
-    )
-  )
+      tabPanel("Uji Homoskedastisitas", card(full_screen = TRUE, card_header("Uji Levene"), verbatimTextOutput("levene"))),
+      tabPanel("Uji Normalitas Residual", card(full_screen = TRUE, card_header("Histogram & Uji Normalitas Residual"), plotOutput("residual_plot"), verbatimTextOutput("residual_test"))),
+      tabPanel("Uji Multikolinearitas", card(full_screen = TRUE, card_header("Uji Multikolinearitas dengan VIF"), verbatimTextOutput("vif_output")))
+  ))
 )
 
-# Data Loading and Management
+# --- SERVER (Logic) ---
 server <- function(input, output, session) {
-  # Reactive values to store data states
+
   rv <- reactiveValues(
-    raw_data = NULL,      # Data asli dari file CSV
-    cleaned_data = NULL,  # Data yang telah dibersihkan dari NA
-    is_cleaned = FALSE    # Penanda apakah data sudah dibersihkan
+    raw_data = NULL,      # Untuk menyimpan data asli
+    cleaned_data = NULL,  # Untuk menyimpan data yang sudah dibersihkan
+    is_cleaned = FALSE    # Flag untuk menandai apakah pembersihan sudah dilakukan
   )
-  
-  # Proses upload file CSV
+
+  # 1. Saat file diunggah, reset semua state
   observeEvent(input$file, {
     req(input$file)
     df <- tryCatch({
@@ -290,32 +324,33 @@ server <- function(input, output, session) {
       showNotification(paste("Gagal membaca file:", e$message), type = "error", duration = 10)
       return(NULL)
     })
-    
+
     if (!is.null(df)) {
       rv$raw_data <- df
-      rv$cleaned_data <- NULL
-      rv$is_cleaned <- FALSE
+      rv$cleaned_data <- NULL # Reset data bersih
+      rv$is_cleaned <- FALSE  # Reset status pembersihan
       showNotification("File berhasil diunggah.", type = "message")
     }
   })
-  
-  # Konfirmasi dan proses pembersihan data dari NA
+
+  # 2. Logika untuk membersihkan data
   observeEvent(input$confirm_clean, {
     removeModal()
+
     df_cleaned <- rv$raw_data[complete.cases(rv$raw_data), ]
-    
+
     if (nrow(df_cleaned) == 0) {
       showNotification("Peringatan: Semua baris mengandung NA dan telah dihapus.", type = "warning", duration = 10)
     } else {
       rows_removed <- nrow(rv$raw_data) - nrow(df_cleaned)
       showNotification(paste(rows_removed, "baris dengan NA berhasil dihapus."), type = "message")
     }
-    
-    rv$cleaned_data <- df_cleaned
-    rv$is_cleaned <- TRUE
+
+    rv$cleaned_data <- df_cleaned # Simpan data bersih
+    rv$is_cleaned <- TRUE        # Tandai bahwa pembersihan sudah selesai
   })
-  
-  # Reset data ke kondisi mentah
+
+  # 3. Tombol Reset: mengembalikan state ke kondisi awal
   observeEvent(input$reset, {
     req(rv$raw_data)
     rv$cleaned_data <- NULL
@@ -323,16 +358,14 @@ server <- function(input, output, session) {
     updateRadioButtons(session, "data_source_selector", selected = "raw")
     showNotification("Data telah dikembalikan ke kondisi mentah.", type = "default")
   })
-  
-  # UI untuk memilih sumber data (mentah atau bersih)
+
+  # UI dinamis untuk memilih sumber data analisis
   output$data_source_ui <- renderUI({
     req(rv$raw_data)
     choices <- c("Data Mentah" = "raw")
-    
     if (rv$is_cleaned) {
       choices <- c(choices, "Data Bersih" = "clean")
     }
-    
     radioButtons(
       "data_source_selector",
       label = "Pilih Sumber Data untuk Analisis:",
@@ -340,231 +373,246 @@ server <- function(input, output, session) {
       selected = "raw"
     )
   })
-  
-  # Reactive untuk memilih data mentah / bersih tergantung pilihan user
+
+  # Reactive utama yang menyediakan data untuk SEMUA analisis
   analysis_data <- reactive({
     req(rv$raw_data, input$data_source_selector)
-    
+
     if (input$data_source_selector == "clean" && rv$is_cleaned) {
       return(rv$cleaned_data)
     } else {
       return(rv$raw_data)
     }
   })
-  
-# Data Visualization and Tables
-# Tabel: Menampilkan data mentah
-output$raw_table <- renderDT({
-  req(rv$raw_data)
-  datatable(
-    rv$raw_data,
-    options = list(
-      scrollX = TRUE,
-      scrollY = "300px",
-      pageLength = 10
-    ),
-    caption = "Data asli yang diunggah."
-  )
-})
 
-# Tabel: Menampilkan data yang telah dibersihkan
-output$cleaned_table_preview <- renderDT({
-  if (!rv$is_cleaned || is.null(rv$cleaned_data)) {
-    return(datatable(
-      data.frame(Status = "Data belum dibersihkan atau tidak ada data bersih."),
-      options = list(dom = 't')
-    ))
-  }
-  datatable(
-    rv$cleaned_data,
-    options = list(
-      scrollX = TRUE,
-      scrollY = "300px",
-      pageLength = 10
-    ),
-    caption = "Hasil setelah penghapusan baris dengan nilai NA."
-  )
-})
+  # --- Output dan Analisis sekarang menggunakan `analysis_data()` ---
 
-# Visualisasi: Line atau Bar plot berdasarkan variabel dependen yang dipilih
-output$data_plot <- renderPlot({
-  df <- analysis_data()
-  req(df, input$plot_type, input$dep_var)
-  if (nrow(df) == 0) return(NULL)
-  
-  x_var <- seq_len(nrow(df))
-  y_val <- df[[input$dep_var]]
-  
-  p <- ggplot(
-    data.frame(Index = x_var, Y = y_val),
-    aes(x = Index, y = Y)
-  )
-  
-  if (input$plot_type == "Line") {
-    p +
-      geom_line(color = "#007bff") +
-      geom_smooth(color = "#6c757d", se = FALSE) +
-      labs(
-        title = paste("Plot dari", input$dep_var),
-        x = "Indeks",
-        y = input$dep_var
-      ) +
-      theme_minimal()
-  } else {
-    p +
-      geom_bar(stat = "identity", fill = "#28a745") +
-      labs(
-        title = paste("Plot dari", input$dep_var),
-        x = "Indeks",
-        y = input$dep_var
-      ) +
-      theme_minimal()
-  }
-})
+  output$raw_table <- renderDT({
+    req(rv$raw_data)
+    datatable(rv$raw_data, options = list(scrollX = TRUE, scrollY = "300px", pageLength = 10), caption = "Data asli yang diunggah.")
+  })
 
-# UI untuk pemilihan variabel
-output$var_select_ui <- renderUI({
-  df <- analysis_data()
-  req(df)
-  if (nrow(df) > 0) {
-    tagList(
-      hr(),
-      h5("4. Pemilihan Variabel"),
-      selectInput("dep_var", "Variabel Dependen (Y)", choices = names(df), selected = names(df)[1]),
-      selectInput("ind_vars", "Variabel Independen (X)", choices = names(df), multiple = TRUE, selected = names(df)[2])
-    )
-  }
-})
+  output$cleaned_table_preview <- renderDT({
+    if (!rv$is_cleaned || is.null(rv$cleaned_data)) {
+      return(datatable(data.frame(Status = "Data belum dibersihkan atau tidak ada data bersih."), options = list(dom = 't')))
+    }
+    datatable(rv$cleaned_data, options = list(scrollX = TRUE, scrollY = "300px", pageLength = 10), caption = "Hasil setelah penghapusan baris dengan nilai NA.")
+  })
 
-# Value box jumlah data
-output$value1 <- renderValueBox({
-  df <- analysis_data()
-  req(df)
-  count <- nrow(df)
-  source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
-  valueBox(count, paste("Jumlah Baris di", source_text), icon = icon("list"))
-})
+  output$var_select_ui <- renderUI({
+    df <- analysis_data()
+    req(df)
+    if (nrow(df) > 0) {
+      tagList(
+        hr(),
+        h5("4. Pemilihan Variabel"),
+        selectInput("dep_var", "Variabel Dependen (Y)", choices = names(df), selected = names(df)[1]),
+        selectInput("ind_vars", "Variabel Independen (X)", choices = names(df), multiple = TRUE, selected = names(df)[2])
+      )
+    }
+  })
 
-# Ringkasan statistik
-output$summary <- renderPrint({
-  df <- analysis_data()
-  req(df, input$dep_var, input$ind_vars)
-  if (nrow(df) == 0) return("Data kosong.")
-  source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
-  cat(paste("### Ringkasan berdasarkan", source_text, "###\n\n"))
-  cat("Ringkasan untuk Variabel Dependen (Y):\n")
-  print(summary(df[[input$dep_var]]))
-  cat("\nRingkasan untuk Variabel Independen (X):\n")
-  print(summary(df[, input$ind_vars, drop = FALSE]))
-})
+  output$value1 <- renderValueBox({
+    df <- analysis_data()
+    req(df)
+    count <- nrow(df)
+    source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
+    valueBox(count, paste("Jumlah Baris di", source_text), icon = icon("list"))
+  })
 
-# UI untuk variabel pada analisis ANOVA
-output$anova_var_ui <- renderUI({
-  df <- analysis_data()
-  req(df)
-  if(nrow(df) > 0){
-    tagList(
-      selectInput("dep_var_anova", "Variabel Dependen (Y)", choices=names(df), selected = isolate(input$dep_var)),
-      selectInput("ind_vars_anova", "Variabel Independen (X)", choices=names(df), multiple=TRUE, selected = isolate(input$ind_vars))
-    )
-  }
-})
+  output$summary <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var, input$ind_vars)
+    if (nrow(df) == 0) return("Data kosong.")
 
-# Output hasil ANOVA
-output$anova <- renderPrint({
-  df <- analysis_data()
-  req(df, input$dep_var_anova, input$ind_vars_anova)
-  if(nrow(df) == 0) return("Tidak bisa melakukan ANOVA pada data kosong.")
-  for(var in input$ind_vars_anova){
-    df[[var]] <- as.factor(df[[var]])
-  }
-  formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse = "+")))
-  summary(aov(formula, data = df))
-})
+    source_text <- if (input$data_source_selector == "clean") "Data Bersih" else "Data Mentah"
+    cat(paste("### Ringkasan berdasarkan", source_text, "###\n\n"))
+    cat("Ringkasan untuk Variabel Dependen (Y):\n")
+    print(summary(df[[input$dep_var]]))
+    cat("\nRingkasan untuk Variabel Independen (X):\n")
+    print(summary(df[, input$ind_vars, drop = FALSE]))
+  })
 
-# Uji normalitas
-output$normality <- renderPrint({
-  df <- analysis_data()
-  req(df, input$dep_var)
-  if(nrow(df) == 0) return("Tidak bisa melakukan uji normalitas pada data kosong.")
-  y <- df[[input$dep_var]]
-  if(!is.numeric(y)){
-    cat("Uji normalitas memerlukan variabel dependen numerik.")
-  } else {
-    list(
-      "Uji Shapiro-Wilk" = shapiro.test(y),
-      "Uji Anderson-Darling" = ad.test(y)
-    )
-  }
-})
+  output$data_plot <- renderPlot({
+    df <- analysis_data()
+    req(df, input$plot_type, input$dep_var)
+    if (nrow(df) == 0) return(NULL)
 
-# Uji homoskedastisitas (Levene)
-output$levene <- renderPrint({
-  df <- analysis_data()
-  req(df, input$dep_var, input$ind_vars)
-  if(nrow(df) == 0) return("Tidak bisa melakukan Uji Levene pada data kosong.")
-  y <- df[[input$dep_var]]
-  if(!is.numeric(y)){
-    cat("Uji Levene memerlukan variabel dependen numerik.")
-  } else {
-    for(var in input$ind_vars){
+    df_sample <- df
+
+    x_var <- seq_len(nrow(df_sample))
+    y_val <- df_sample[[input$dep_var]]
+
+    p <- ggplot(data.frame(Index = x_var, Y = y_val), aes(x = Index, y = Y))
+
+    if (input$plot_type == "Line") {
+      p + geom_line(color = "#007bff") + geom_smooth(color = "#6c757d", se = FALSE) + labs(title = paste("Plot dari", input$dep_var), x = "Indeks", y = input$dep_var) + theme_minimal()
+    } else {
+      p + geom_bar(stat = "identity", fill = "#28a745") + labs(title = paste("Plot dari", input$dep_var), x = "Indeks", y = input$dep_var) + theme_minimal()
+    }
+  })
+
+  output$anova_var_ui <- renderUI({
+    df <- analysis_data()
+    req(df)
+    if(nrow(df) > 0){
+      tagList(
+        selectInput("dep_var_anova", "Variabel Dependen (Y)", choices=names(df), selected = isolate(input$dep_var)),
+        selectInput("ind_vars_anova", "Variabel Independen (X)", choices=names(df), multiple=TRUE, selected = isolate(input$ind_vars))
+      )
+    }
+  })
+
+  output$anova <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var_anova, input$ind_vars_anova)
+    if(nrow(df) == 0) return("Tidak bisa melakukan ANOVA pada data kosong.")
+    for(var in input$ind_vars_anova){
       df[[var]] <- as.factor(df[[var]])
     }
-    formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "*")))
-    print(leveneTest(formula, data = df))
-  }
-})
+    formula <- as.formula(paste(input$dep_var_anova, "~", paste(input$ind_vars_anova, collapse="+")))
+    summary(aov(formula, data=df))
+  })
 
-# Modal konfirmasi pembersihan
-observeEvent(input$clean, {
-  req(rv$raw_data)
-  has_missing <- any(is.na(rv$raw_data))
-  showModal(modalDialog(
-    title = "Konfirmasi Pembersihan Data",
-    if (has_missing) "Lanjutkan dengan menghapus baris yang mengandung NA?" else "Tidak ada nilai NA yang ditemukan.",
-    footer = if (has_missing) tagList(
-      actionButton("confirm_clean", "Ya", class = "btn-primary"),
-      modalButton("Batal")
-    ) else modalButton("OK")
-  ))
-})
+  output$normality <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var)
+    if(nrow(df) == 0) return("Tidak bisa melakukan uji normalitas pada data kosong.")
+    y <- df[[input$dep_var]]
+    if(!is.numeric(y)){
+      cat("Uji normalitas memerlukan variabel dependen numerik.")
+    } else {
+      list("Uji Shapiro-Wilk"=shapiro.test(y), "Uji Anderson-Darling"=ad.test(y))
+    }
+  })
 
-# Modal konfirmasi analisis
-observeEvent(input$analyze, {
-  req(analysis_data())
-  showModal(modalDialog(
-    title = "Konfirmasi Analisis",
-    "Ini akan menjalankan semua analisis berdasarkan sumber data dan variabel yang Anda pilih. Lanjutkan?",
-    footer = tagList(
-      actionButton("confirm_analyze_run", "Ya", class = "btn-primary"),
-      modalButton("Tidak")
+  output$levene <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var, input$ind_vars)
+    if(nrow(df) == 0) return("Tidak bisa melakukan Uji Levene pada data kosong.")
+    y <- df[[input$dep_var]]
+    if(!is.numeric(y)){
+      cat("Uji Levene memerlukan variabel dependen numerik.")
+    } else {
+      for(var in input$ind_vars){
+        df[[var]] <- as.factor(df[[var]])
+      }
+      formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse="*")))
+      print(leveneTest(formula, data=df))
+    }
+  })
+
+  # Bagian modal konfirmasi dan bantuan
+  observeEvent(input$clean, {
+    req(rv$raw_data)
+    has_missing <- any(is.na(rv$raw_data))
+    showModal(modalDialog(
+      title = "Konfirmasi Pembersihan Data",
+      if (has_missing) "Lanjutkan dengan menghapus baris yang mengandung NA?" else "Tidak ada nilai NA yang ditemukan.",
+      footer = if (has_missing) tagList(actionButton("confirm_clean", "Ya", class = "btn-primary"), modalButton("Batal")) else modalButton("OK")
+    ))
+  })
+
+  observeEvent(input$analyze, {
+    req(analysis_data())
+    showModal(modalDialog(
+      title = "Konfirmasi Analisis",
+      "Ini akan menjalankan semua analisis berdasarkan sumber data dan variabel yang Anda pilih. Lanjutkan?",
+      footer = tagList(actionButton("confirm_analyze_run", "Ya", class = "btn-primary"), modalButton("Tidak"))
+    ))
+  })
+
+  observeEvent(input$confirm_analyze_run, {
+    removeModal()
+    showNotification("Analisis berhasil dibuat!", type = "message")
+  })
+
+  observeEvent(input$help, {
+    showModal(modalDialog(
+      title = "Bantuan: Aplikasi Analisis Data",
+      "Aplikasi ini memungkinkan Anda untuk:",
+      tags$ul(
+        tags$li("Mengunggah file CSV untuk dianalisis."),
+        tags$li("Membersihkan data dengan menghapus baris NA (opsional)."),
+        tags$li("Memilih antara data mentah atau data bersih untuk dianalisis."),
+        tags$li("Menghasilkan statistik ringkas dan hasil ANOVA."),
+        tags$li("Melakukan uji asumsi (Normalitas dan Homoskedastisitas)."),
+        tags$li("Memvisualisasikan data dengan plot.")
+      ),
+      easyClose = TRUE
+    ))
+  })
+
+  # Residual Plot
+  output$residual_plot <- renderPlot({
+    df <- analysis_data()
+    req(df, input$dep_var, input$ind_vars)
+    
+    formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+")))
+    model <- lm(formula, data = df)
+    resid <- residuals(model)
+    
+    hist(resid, col = "#00c2cb", main = "Histogram Residual", xlab = "Nilai Residual", breaks = 20)
+  })
+
+  # Residual Normality Test
+  output$residual_test <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var, input$ind_vars)
+    
+    formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+")))
+    model <- lm(formula, data = df)
+    resid <- residuals(model)
+    
+    cat("Uji Normalitas Residual:\n\n")
+    shapiro <- shapiro.test(resid)
+    ad <- ad.test(resid)
+    
+    cat("Shapiro-Wilk:\n")
+    print(shapiro)
+    cat("Interpretasi: Berdasarkan Uji Shapiro-Wilk dengan taraf signifikansi 5%, \n")
+    if (shapiro$p.value < 0.05) {
+      cat("Residual tidak berdistribusi normal pada tingkat kepercayaan 95% (p-value < 0.05)\n")
+    } else {
+      cat("Residual berdistribusi normal pada tingkat kepercayaan 95% (p-value ≥ 0.05)\n")
+    }
+
+    cat("\nAnderson-Darling:\n")
+    print(ad)
+    cat("Interpretasi: Berdasarkan Uji Anderson-Darling dengan taraf signifikansi 5%, \n")
+    if (ad$p.value < 0.05) {
+      cat("Residual tidak berdistribusi normal pada tingkat kepercayaan 95% (p-value < 0.05)\n")
+    } else {
+      cat("Residual berdistribusi normal pada tingkat kepercayaan 95% (p-value ≥ 0.05)\n")
+    }
+  })
+
+  # VIF - Multicollinearity 
+  output$vif_output <- renderPrint({
+    df <- analysis_data()
+    req(df, input$dep_var, input$ind_vars)
+
+    formula <- as.formula(paste(input$dep_var, "~", paste(input$ind_vars, collapse = "+")))
+    model <- lm(formula, data = df)
+
+    vif_values <- vif(model)
+
+    cat("VIF (Variance Inflation Factor):\n")
+    
+    interpretations <- sapply(vif_values, function(val) {
+      if (val > 10) { "Multikolinearitas sangat tinggi (VIF > 10)"} 
+      else if (val > 5) { "Terdapat indikasi multikolinearitas (VIF > 5)" } 
+      else { "Tidak ada indikasi multikolinearitas" }
+    })
+    
+    output_df <- data.frame(
+    VIF = round(unname(vif_values), 4),
+    Keterangan = interpretations
     )
-  ))
-})
 
-# Notifikasi analisis berhasil dijalankan
-observeEvent(input$confirm_analyze_run, {
-  removeModal()
-  showNotification("Analisis berhasil dibuat!", type = "message")
-})
-
-# Modal bantuan
-observeEvent(input$help, {
-  showModal(modalDialog(
-    title = "Bantuan: Aplikasi Analisis Data", 
-    "Aplikasi ini memungkinkan Anda untuk:",
-    tags$ul(
-      tags$li("Mengunggah file CSV untuk dianalisis."),
-      tags$li("Membersihkan data dengan menghapus baris NA (opsional)."),
-      tags$li("Memilih antara data mentah atau data bersih untuk dianalisis."),
-      tags$li("Menghasilkan statistik ringkas dan hasil ANOVA."),
-      tags$li("Melakukan uji asumsi (Normalitas dan Homoskedastisitas)."),
-      tags$li("Memvisualisasikan data dengan plot.")
-    ),
-    easyClose = TRUE
-  ))
-})
+    print(output_df, row_names = FALSE)
+  })
 }
 
-# Jalankan aplikasi
+# Jalankan Aplikasi
 shinyApp(ui, server)
