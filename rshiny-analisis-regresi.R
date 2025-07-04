@@ -523,22 +523,6 @@ server <- function(input, output, session) {
     req(analysis_data(), input$dep_var, input$ind_vars)
     df <- analysis_data()
     
-    # --- VALIDASI PENTING DITAMBAHKAN ---
-    for(var in input$ind_vars) {
-      # Hitung jumlah level/grup unik
-      unique_levels <- length(unique(df[[var]]))
-      
-      # Beri peringatan jika variabel numerik dan punya terlalu banyak grup (>15)
-      # Angka 15 ini bisa Anda sesuaikan
-      if(is.numeric(df[[var]]) && unique_levels > 15) {
-        showNotification(
-          paste("Peringatan: Variabel '", var, "' memiliki", unique_levels, "nilai unik. ANOVA memperlakukannya sebagai grup terpisah. Analisis ini lebih cocok untuk variabel kategorikal dengan sedikit grup."),
-          type = "warning",
-          duration = 15 # Tampilkan notifikasi lebih lama
-        )
-      }
-    }
-    
     # Sisa kode tetap sama
     for(var in input$ind_vars) {
       df[[var]] <- as.factor(df[[var]])
@@ -939,7 +923,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       # Pengecekan awal
-      if (is.null(model_fit()) || is.null(anova_model_summary())) {
+      if (is.null(model_fit())) {
         showNotification("Gagal: Model belum siap. Lakukan analisis terlebih dahulu.", type = "error", duration = 10)
         return(NULL)
       }
@@ -948,9 +932,14 @@ server <- function(input, output, session) {
       id <- showNotification("Sedang mempersiapkan laporan PDF...", duration = NULL, type = "message")
       on.exit(removeNotification(id))
       
-      # --- Menyiapkan semua objek dan teks interpretasi ---
+      # --- Menyiapkan semua objek dari model reaktif ---
       model_obj <- model_fit()
-      anova_summary_obj <- anova_model_summary()
+      model_summary_obj <- summary(model_obj) # Menggunakan summary dari model_fit()
+      
+      # anova_summary_obj sekarang juga bisa menggunakan summary dari model_fit untuk konsistensi
+      # karena tab ANOVA Anda menampilkan ringkasan regresi.
+      anova_summary_obj <- model_summary_obj 
+      
       summary_data_obj <- summary(analysis_data())
       
       model_equation_str <- {
@@ -970,6 +959,7 @@ server <- function(input, output, session) {
       
       residual_normality_obj <- shapiro.test(residuals(model_obj))
       
+      # Menggunakan logika plot yang sama dengan di output$data_plot
       main_plot_obj <- {
         df <- analysis_data()
         p <- ggplot(df, aes(x = .data[[input$ind_vars[1]]], y = .data[[input$dep_var]]))
@@ -978,43 +968,40 @@ server <- function(input, output, session) {
         p + labs(title = paste("Plot", input$dep_var, "vs", input$ind_vars[1])) + theme_minimal(base_size = 12)
       }
       
+      # Menggunakan logika interpretasi yang sama dengan di output$anova_interpretation_text
       anova_interpretation_str <- {
-        # Logika ini untuk membuat rangkuman di PDF, tetap dipertahankan
-        f_stat <- anova_summary_obj$fstatistic
-        f_value <- f_stat[["value"]]; f_pvalue <- pf(f_stat[["value"]], f_stat[["numdf"]], f_stat[["dendf"]], lower.tail = FALSE)
-        r_squared <- anova_summary_obj$r.squared
-        coef_summary <- anova_summary_obj$coefficients
-        f_stat_text <- paste0("<h4>F-Statistik</h4><p>Nilai F = ", round(f_value, 3), ", p-value = ", format.pval(f_pvalue, digits=3), ".</p>", if(f_pvalue < 0.05) "<p>Model signifikan.</p>" else "<p>Model tidak signifikan.</p>")
-        r_squared_text <- paste0("<h4>R-Squared</h4><p>Nilai R-Squared = ", round(r_squared, 3), ".</p><p>", round(r_squared * 100, 1), "% variasi Y dapat dijelaskan.</p>")
-        coef_text <- "<h4>Koefisien Signifikan (p < 0.05)</h4>"
-        significant_coeffs_found <- FALSE
-        list_items <- ""
+        f_stat <- model_summary_obj$fstatistic
+        f_value <- f_stat[["value"]]; f_pvalue <- pf(f_value, f_stat[["numdf"]], f_stat[["dendf"]], lower.tail = FALSE)
+        r_squared <- model_summary_obj$r.squared
+        coef_summary <- model_summary_obj$coefficients
+        
+        # Di PDF, kita akan tampilkan semua interpretasi (tidak perlu dropdown)
+        f_stat_text <- paste0("<h4>F-Statistik</h4><p>Nilai F = ", round(f_value, 3), ", p-value = ", format.pval(f_pvalue, digits=3), ".</p>", if(f_pvalue < 0.05) "<p>Model signifikan secara statistik.</p>" else "<p>Model tidak signifikan secara statistik.</p>")
+        r_squared_text <- paste0("<h4>R-Squared</h4><p>Nilai R-Squared = ", round(r_squared, 3), ".</p><p>", round(r_squared * 100, 1), "% variasi pada variabel dependen dapat dijelaskan oleh model.</p>")
+        coef_text <- "<h4>Koefisien dan Signifikansi</h4><ul>"
         for(i in 1:nrow(coef_summary)) {
+          var_name <- rownames(coef_summary)[i]
           p_val <- coef_summary[i, "Pr(>|t|)"]
-          if (!is.na(p_val) && p_val < 0.05) {
-            var_name <- rownames(coef_summary)[i]
-            list_items <- paste0(list_items, "<li><b>", var_name, "</b>: Signifikan.</li>")
-            significant_coeffs_found <- TRUE
-          }
+          signif_text <- if (!is.na(p_val) && p_val < 0.05) {"signifikan."} else {"tidak signifikan."}
+          coef_text <- paste0(coef_text, "<li><b>", var_name, "</b>: ", signif_text, " (p-value = ", format.pval(p_val, digits=3),")</li>")
         }
-        if (significant_coeffs_found) { coef_text <- paste0(coef_text, "<ul>", list_items, "</ul>")
-        } else { coef_text <- paste0(coef_text, "<p>Tidak ada koefisien signifikan.</p>") }
+        coef_text <- paste0(coef_text, "</ul>")
+        
         paste(f_stat_text, r_squared_text, coef_text, sep="<hr>")
       }
       
-      # === BLOK KODE YANG HILANG DAN SEKARANG DITAMBAHKAN KEMBALI ===
       residual_normality_interpretation_str <- {
         shapiro_res <- residual_normality_obj
         p_val <- shapiro_res$p.value
         paste0("<p>Uji Shapiro-Wilk pada residual: p-value = ", format.pval(p_val, digits=3), ". ",
-               if(p_val < 0.05) "Ini menunjukkan bahwa residual **tidak** berdistribusi normal (asumsi tidak terpenuhi)."
-               else "Tidak ada bukti bahwa residual tidak berdistribusi normal (asumsi terpenuhi)."
+               if(p_val < 0.05) "Ini menunjukkan bahwa residual **tidak** berdistribusi normal."
+               else "Ini menunjukkan bahwa residual berdistribusi normal."
         )
       }
       
       vif_interpretation_str <- {
         if(length(input$ind_vars) <= 1) {
-          "<p>Interpretasi VIF tidak tersedia.</p>"
+          "<p>VIF tidak dihitung karena hanya ada satu variabel independen.</p>"
         } else {
           vif_values <- vif(model_obj)
           interp_text <- "<ul>"
@@ -1031,29 +1018,34 @@ server <- function(input, output, session) {
       model_equation_interpretation_str <- {
         coefs <- coef(model_obj)
         interp_text <- "<ul>"
-        interp_text <- paste0(interp_text, "<li><b>(Intercept)</b>: Saat semua variabel independen nol, nilai prediksi '", input$dep_var, "' adalah ", round(coefs[1], 4), ".</li>")
+        interp_text <- paste0(interp_text, "<li><b>(Intercept)</b>: Saat semua variabel independen bernilai nol, nilai prediksi untuk '", input$dep_var, "' adalah ", round(coefs[1], 4), ".</li>")
         if(length(coefs) > 1) {
           for(i in 2:length(coefs)) {
             var_name <- names(coefs)[i]
             value <- round(coefs[i], 4)
             arah <- ifelse(value >= 0, "menaikkan", "menurunkan")
-            interp_text <- paste0(interp_text, "<li><b>", var_name, "</b>: Kenaikan 1 satuan '", var_name, "' akan ", arah, " nilai prediksi '", input$dep_var, "' sebesar ", abs(value), ".</li>")
+            interp_text <- paste0(interp_text, "<li><b>", var_name, "</b>: Setiap kenaikan 1 satuan pada '", var_name, "', akan ", arah, " nilai prediksi '", input$dep_var, "' sebesar ", abs(value), ", dengan asumsi variabel lain konstan.</li>")
           }
         }
         paste0(interp_text, "</ul>")
       }
       
-      # Menyiapkan file dan parameter list LENGKAP
+      # Menyiapkan file dan parameter list
       tempReport <- file.path(tempdir(), "report.Rmd")
       file.copy("report.Rmd", tempReport, overwrite = TRUE)
       
       params_list <- list(
-        summary_data = summary_data_obj, anova_summary = anova_summary_obj,
-        model_summary = summary(model_obj), reg_model = model_obj,
-        model_equation = model_equation_str, vif_results = vif_results_obj,
-        residual_normality = residual_normality_obj, main_plot = main_plot_obj,
+        summary_data = summary_data_obj,
+        # Mengirimkan summary model regresi yang benar
+        anova_summary = model_summary_obj,
+        model_summary = model_summary_obj,
+        reg_model = model_obj,
+        model_equation = model_equation_str,
+        vif_results = vif_results_obj,
+        residual_normality = residual_normality_obj,
+        main_plot = main_plot_obj,
         anova_interpretation = anova_interpretation_str,
-        residual_normality_interpretation = residual_normality_interpretation_str, # Variabel ini sekarang sudah ada
+        residual_normality_interpretation = residual_normality_interpretation_str,
         vif_interpretation = vif_interpretation_str,
         model_equation_interpretation = model_equation_interpretation_str
       )
