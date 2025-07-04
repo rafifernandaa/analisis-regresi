@@ -324,7 +324,7 @@ ui <- page_navbar(
                card(
                  full_screen = TRUE,
                  card_header("ANOVA"),
-                 verbatimTextOutput("anova_results"),
+                 verbatimTextOutput("model_summary"),
                  hr(),
                  # Fitur interpretasi Anda dipertahankan
                  selectInput(
@@ -336,21 +336,18 @@ ui <- page_navbar(
                  htmlOutput("anova_interpretation_text")
                )
       ),
-      tabPanel("Visualisasi", card(full_screen = TRUE, card_header("Plot Data"), plotOutput("data_plot", height = "400px"))),
       tabPanel("Model Akhir", 
                card(
                  full_screen = TRUE, 
                  card_header("Model Regresi Linear"),
-                 h5("Ringkasan Model (Model Summary)"),
-                 verbatimTextOutput("model_summary"),
-                 hr(),
                  h5("Persamaan Model Akhir"),
                  uiOutput("model_equation"),
                  hr(),
                  h5("Interpretasi Koefisien"),
                  verbatimTextOutput("model_interpretation")
                )
-      )
+      ),
+      tabPanel("Visualisasi", card(full_screen = TRUE, card_header("Plot Data"), plotOutput("data_plot", height = "400px")))
     )
   ),
   nav_panel(
@@ -628,26 +625,17 @@ server <- function(input, output, session) {
     }
   })
   
-  output$anova_results <- renderPrint({
-    req(anova_model_summary())
-    model_summary <- anova_model_summary()
-    
-    # Hapus komponen 'call' dari objek summary
-    model_summary$call <- NULL
-    
-    # Cetak objek yang sudah dimodifikasi
-    print(model_summary)
+  output$model_summary <- renderPrint({
+    req(model_fit())
+    summary(model_fit())
   })
-  
   output$anova_interpretation_text <- renderUI({
-    req(anova_model_summary(), input$anova_interpretation)
-    model_summary <- anova_model_summary() # Menggunakan model reaktif
+    req(model_fit(), input$anova_interpretation)
     
-    # Sisa kode Anda untuk interpretasi di sini sudah benar dan bisa dipertahankan
-    # Pastikan variabel inputnya sesuai dengan yang ada di UI, yaitu "anova_interpretation"
+    model_summary <- summary(model_fit())
     f_stat <- model_summary$fstatistic
     f_value <- f_stat[["value"]]
-    f_pvalue <- pf(f_stat[["value"]], f_stat[["numdf"]], f_stat[["dendf"]], lower.tail = FALSE)
+    f_pvalue <- pf(f_value, f_stat[["numdf"]], f_stat[["dendf"]], lower.tail = FALSE)
     r_squared <- model_summary$r.squared
     adj_r_squared <- model_summary$adj.r.squared
     coef_summary <- model_summary$coefficients
@@ -655,80 +643,77 @@ server <- function(input, output, session) {
     interpretation <- switch(input$anova_interpretation,
                              "f_stat" = paste0(
                                "<h4>F-Statistik</h4>",
-                               "<p>Nilai F = ", round(f_value, 3), ", p-value = ", format.pval(f_pvalue, digits=3), ".</p>",
-                               if(f_pvalue < 0.05) {
-                                 "<p>Model secara keseluruhan signifikan secara statistik (p < 0.05), menunjukkan bahwa setidaknya satu variabel independen memiliki pengaruh signifikan terhadap variabel dependen.</p>"
+                               "<p>Nilai F = ", round(f_value, 3), ", p-value = ", format.pval(f_pvalue, digits = 3), ".</p>",
+                               if (f_pvalue < 0.05) {
+                                 "<p>Model signifikan secara statistik (p < 0.05), menunjukkan bahwa setidaknya satu variabel independen berpengaruh terhadap variabel dependen.</p>"
                                } else {
-                                 "<p>Model tidak signifikan secara statistik (p >= 0.05), menunjukkan bahwa variabel independen secara kolektif tidak memiliki pengaruh signifikan terhadap variabel dependen.</p>"
+                                 "<p>Model tidak signifikan secara statistik (p ≥ 0.05), artinya variabel independen tidak menunjukkan pengaruh signifikan.</p>"
                                }
                              ),
                              "r_squared" = paste0(
                                "<h4>R-Squared</h4>",
-                               "<p>Nilai R-Squared = ", round(r_squared, 3), ".</p>",
-                               "<p>Ini menunjukkan bahwa ", round(r_squared * 100, 1), "% variasi dalam variabel dependen (", input$dep_var_anova, ") dapat dijelaskan oleh variabel independen dalam model.</p>"
-                             ),
-                             "adj_r_squared" = paste0(
-                               "<h4>Adjusted R-Squared</h4>",
-                               "<p>Nilai Adjusted R-Squared = ", round(adj_r_squared, 3), ".</p>",
-                               "<p>Nilai ini menyesuaikan R-Squared untuk jumlah variabel dalam model, memberikan ukuran yang lebih akurat tentang goodness-of-fit. Nilai yang lebih tinggi menunjukkan model yang lebih baik.</p>"
+                               "<p>Nilai R-Squared = ", round(r_squared, 3), "</p>",
+                               "<p>Artinya sekitar ", round(r_squared * 100, 1), "% variasi pada variabel dependen (", input$dep_var_anova, ") dapat dijelaskan oleh model.</p>"
                              ),
                              "coefficients" = {
                                coef_text <- "<h4>Koefisien dan Signifikansi</h4><ul>"
-                               for(i in 1:nrow(coef_summary)) {
+                               for (i in 1:nrow(coef_summary)) {
                                  var_name <- rownames(coef_summary)[i]
                                  coef_val <- coef_summary[i, "Estimate"]
                                  p_val <- coef_summary[i, "Pr(>|t|)"]
-                                 coef_text <- paste0(coef_text, "<li>", var_name, ": Koefisien = ", round(coef_val, 3), ", p-value = ", format.pval(p_val, digits=3), "<br>")
-                                 coef_text <- paste0(coef_text, if(p_val < 0.05) {
-                                   paste0("Variabel ini signifikan secara statistik (p < 0.05), menunjukkan bahwa ", var_name, " memiliki pengaruh signifikan terhadap ", input$dep_var_anova, ".")
+                                 signif_text <- if (p_val < 0.05) {
+                                   paste0("signifikan terhadap ", input$dep_var_anova)
                                  } else {
-                                   paste0("Variabel ini tidak signifikan secara statistik (p >= 0.05), menunjukkan bahwa ", var_name, " tidak memiliki pengaruh signifikan terhadap ", input$dep_var_anova, ".")
-                                 }, "</li>")
+                                   paste0("tidak signifikan terhadap ", input$dep_var_anova)
+                                 }
+                                 coef_text <- paste0(
+                                   coef_text, "<li>", var_name, ": Koefisien = ", round(coef_val, 3),
+                                   ", p-value = ", format.pval(p_val, digits = 3),
+                                   " → ", signif_text, ".</li>"
+                                 )
                                }
                                paste0(coef_text, "</ul>")
                              }
     )
+    
     HTML(interpretation)
   })
-  
-  output$model_summary <- renderPrint({
-    req(model_fit())
-    summary(model_fit())
-  })
-  
   output$model_equation <- renderUI({
     model <- model_fit()
     req(model)
     coefs <- coef(model)
     
-    # Membangun string persamaan
     eq_str <- paste0(input$dep_var, " = ", round(coefs[1], 4))
-    if(length(coefs) > 1) {
-      for(i in 2:length(coefs)) {
+    if (length(coefs) > 1) {
+      for (i in 2:length(coefs)) {
         sign <- ifelse(coefs[i] >= 0, " + ", " - ")
         eq_str <- paste0(eq_str, sign, round(abs(coefs[i]), 4), " * ", names(coefs)[i])
       }
     }
-    tags$p(style="font-size:1.1em; background-color:#f5f5f5; border-radius:5px; padding:10px;", tags$code(eq_str))
+    
+    tags$p(
+      style = "font-size:1.1em; background-color:#f5f5f5; border-radius:5px; padding:10px;",
+      tags$code(eq_str)
+    )
   })
-  
   output$model_interpretation <- renderPrint({
     model <- model_fit()
     req(model)
     coefs <- coef(model)
     
     cat(paste0("Intercept (", round(coefs[1], 4), "):\n"))
-    cat(paste0("  Nilai prediksi '", input$dep_var, "' ketika semua variabel independen bernilai nol.\n\n"))
+    cat(paste0("  Nilai prediksi '", input$dep_var, "' saat semua prediktor bernilai nol.\n\n"))
     
-    if(length(coefs) > 1) {
-      for(i in 2:length(coefs)) {
+    if (length(coefs) > 1) {
+      for (i in 2:length(coefs)) {
         var_name <- names(coefs)[i]
         value <- round(coefs[i], 4)
         cat(paste0("Koefisien '", var_name, "' (", value, "):\n"))
-        cat(paste0("  Setiap kenaikan 1 unit pada '", var_name, "', akan merubah '", input$dep_var, "' sebesar ", value, " satuan, asumsi variabel lain konstan.\n\n"))
+        cat(paste0("  Setiap peningkatan 1 unit pada '", var_name, "' akan mengubah nilai '", input$dep_var, "' sebesar ", value, ", dengan asumsi variabel lain tetap.\n\n"))
       }
     }
   })
+  
   
   output$normality_results <- renderPrint({
     df <- analysis_data()
