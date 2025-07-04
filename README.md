@@ -16,7 +16,11 @@ Aplikasi web berbasis R Shiny yang dirancang untuk melakukan analisis data secar
 -   **✅ Uji Asumsi**:
     -   **Uji Normalitas**: Menggunakan uji Shapiro-Wilk dan Anderson-Darling.
     -   **Uji Homoskedastisitas**: Menggunakan Levene's Test.
+    -   **Uji Normalitas Residual**: Menggunakan Histogram, uji Shapiro-Wilk, dan uji Anderson-Darling.
+    -   **Uji Multikolinearitas**: Menggunakan VIF (Variance Inflation Factor).
+    -   **4-Plot Diagnostic**: Menggunakan Run Sequence Plot, Lag Plot, HIstogram of Residuals, dan Normal Probability Plot.  
 -   **🎨 Visualisasi Data**: Tampilkan data dalam bentuk plot garis atau diagram batang.
+-   **📄 Ekspor Hasil Analisis**: Hasil Analisis diekspor ke dalam bentuk pdf.
 
 ---
 
@@ -69,6 +73,5 @@ install.packages(c(
 2.  **Pembersihan Data**: Jika data Anda memiliki nilai `NA`, klik tombol "Bersihkan Data (Hapus NA)" untuk menghapusnya.
 3.  **Reset Data**: Jika Anda ingin kembali ke data asli, klik "Kemablikan ke Data Mentah".
 4.  **Pilih Variabel**: Di sidebar, pilih variabel dependen (Y) dan independen (X) yang akan dianalisis.
-5.  **Hasilkan Analisis**: Klik tombol "Jalankan Analisis" untuk memperbarui hasil statistik dan visualisasi di semua tab.
 
 ---
