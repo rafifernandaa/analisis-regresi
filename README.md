@@ -32,6 +32,7 @@ Aplikasi web berbasis R Shiny yang dirancang untuk melakukan analisis data secar
 │   └── epl_results_2022-23_missing.csv # Contoh dataset dengan missing value untuk demo
 │   └── epl_results_2022-23.csv # Contoh dataset tanpa missing value untuk demo
 ├── README.md           # File dokumentasi ini
+├── report.Rmd            # File template untuk ekspor hasil analisis
 ├── rshiny-analisis-regresi.R               # Kode utama aplikasi Shiny (UI, Server, & CSS)
 ```
 
@@ -64,6 +65,11 @@ install.packages(c(
 -   Buka file `app.R` di RStudio.
 -   Klik tombol **"Run App"** yang muncul di bagian atas editor.
 -   Atau, jalankan perintah `shiny::runApp()` di konsol R.
+
+---
+
+**Catatan**
+Pastikan file report.Rmd berada dalam folder yang sama dengan file `app.R` untuk melakukan ekspor hasil analisis data ke dalam bentuk pdf. 
 
 ---
 
