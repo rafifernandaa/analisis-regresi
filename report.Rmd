@@ -1,0 +1,98 @@
+---
+title: "Laporan Analisis Data"
+output: pdf_document
+params:
+  summary_data: NULL
+  anova_summary: NULL
+  model_summary: NULL
+  reg_model: NULL
+  model_equation: NULL
+  vif_results: NULL
+  vif_interpretation: NULL
+  residual_normality: NULL
+  main_plot: NULL
+  anova_interpretation: NULL
+  residual_normality_interpretation: NULL
+  model_equation_interpretation: NULL
+---
+
+```{r setup, include=FALSE}
+# Blok setup HANYA berisi pengaturan awal dan memuat pustaka
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(knitr)
+library(car)
+```
+
+
+##Laporan ini dibuat secara otomatis pada tanggal ```r format(Sys.Date(), '%d %B %Y')```.
+
+##1. Ringkasan Data
+Berikut adalah ringkasan statistik dari data yang digunakan untuk analisis.
+```{r summary}
+print(params$summary_data)
+```
+
+##2. Hasil Analisis Varians (ANOVA)
+```{r anova}
+anova_sum <- params$anova_summary
+anova_sum$call <- NULL 
+print(anova_sum)
+```
+Interpretasi ANOVA
+```{r anova_interpretation,results='asis'}
+cat(params$anova_interpretation)
+```
+
+
+##3. Model Regresi Linear
+Persamaan Model
+```{r model_equation, results='asis'}
+cat(params$model_equation)
+cat(params$model_equation_interpretation)
+```
+
+##4. Uji Asumsi Model Regresi
+Uji Multikolinearitas (VIF)
+```{r Multicolinearity,results='asis'}
+if (is.character(params$vif_results)) {
+  cat(params$vif_results)
+} else {
+  kable(params$vif_results, caption = "Variance Inflation Factor (VIF)")
+}
+cat(params$vif_interpretation)
+```
+
+Uji Normalitas Residual
+```{r norm_resi}
+print(params$residual_normality)
+```
+Interpretasi Uji Normalitas Residual
+```{r norm_resi_interpretation,results='asis'}
+cat(params$residual_normality_interpretation)
+```
+
+##5. Visualisasi Data
+```{r visualitation, fig.align='center',out.width='100%'}
+print(params$main_plot)
+```
+
+##6. Plot Diagnostik Residual (4-Plot)
+```{r EDA_plot, out.width='48%'}
+model <- params$reg_model
+residuals <- residuals(model)
+
+# Plot 1: Run Sequence Plot
+plot(residuals, type="o", main="Run Sequence Plot", ylab="Residuals", xlab="Observation Index", col="#007bff")
+abline(h = 0, col = "red", lty = 2)
+
+# Plot 2: Lag Plot
+lag.plot(residuals, main="Lag Plot", do.lines=FALSE)
+
+# Plot 3: Histogram
+hist(residuals, main="Histogram of Residuals", xlab="Residuals", col="darkgreen", border="white", breaks=20)
+
+# Plot 4: Normal Q-Q Plot
+qqnorm(residuals, main="Normal Q-Q Plot")
+qqline(residuals, col="red", lty=2)
+```
