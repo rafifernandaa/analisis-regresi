@@ -1,4 +1,3 @@
-
 library(shiny)
 library(bslib)
 library(shinydashboard)
@@ -637,7 +636,7 @@ server <- function(input, output, session) {
                              "r_squared" = paste0(
                                "<h4>R-Squared</h4>",
                                "<p>Nilai R-Squared = ", round(r_squared, 3), "</p>",
-                               "<p>Artinya sekitar ", round(r_squared * 100, 1), "% variasi pada variabel dependen (", input$dep_var_anova, ") dapat dijelaskan oleh model.</p>"
+                               "<p>Artinya sekitar ", round(r_squared * 100, 1), "% variasi pada variabel dependen dapat dijelaskan oleh model.</p>"
                              ),
                              "coefficients" = {
                                coef_text <- "<h4>Koefisien dan Signifikansi</h4><ul>"
