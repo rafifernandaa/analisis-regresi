@@ -68,7 +68,7 @@ install.packages(c(
 
 ---
 
-**Catatan**
+**Catatan:**
 Pastikan file report.Rmd berada dalam folder yang sama dengan file `app.R` untuk melakukan ekspor hasil analisis data ke dalam bentuk pdf. 
 
 ---
