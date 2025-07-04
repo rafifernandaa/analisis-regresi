@@ -646,9 +646,9 @@ server <- function(input, output, session) {
                                  coef_val <- coef_summary[i, "Estimate"]
                                  p_val <- coef_summary[i, "Pr(>|t|)"]
                                  signif_text <- if (p_val < 0.05) {
-                                   paste0("signifikan terhadap ", input$dep_var_anova)
+                                   paste0("signifikan terhadap model", input$dep_var_anova)
                                  } else {
-                                   paste0("tidak signifikan terhadap ", input$dep_var_anova)
+                                   paste0("tidak signifikan terhadap model", input$dep_var_anova)
                                  }
                                  coef_text <- paste0(
                                    coef_text, "<li>", var_name, ": Koefisien = ", round(coef_val, 3),
